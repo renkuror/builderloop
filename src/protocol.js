@@ -1,3 +1,4 @@
+import { createPublicKey, verify } from "node:crypto";
 import { CampaignStatus, DOMAINS, ReceiptStatus, RewardStatus, UserStage } from "./constants.js";
 import { assertHash, assertPubkey, publicKeyBytes, sha256Hex } from "./crypto.js";
 
@@ -129,6 +130,35 @@ export function attestationHash(payload) {
   return sha256Hex(attestationBytes(payload));
 }
 
+/**
+ * Verifies the fixed Ed25519 payload against the frozen verifier identity.
+ * Anchor must additionally inspect the Ed25519 instruction sysvar before this
+ * model's equivalent check can be considered on-chain evidence.
+ */
+export function verifyModuleAttestation(voucher, verifier) {
+  if (voucher.verifier !== verifier) return false;
+  if (typeof voucher.signature !== "string") return false;
+  const key = createPublicKey({
+    key: Buffer.concat([
+      Buffer.from("302a300506032b6570032100", "hex"),
+      Buffer.from(publicKeyBytes(verifier))
+    ]),
+    format: "der",
+    type: "spki"
+  });
+  return verify(null, attestationBytes({
+    builderloopProgramId: voucher.builderloopProgramId,
+    campaign: voucher.campaignAuthority,
+    user: voucher.user,
+    verifierEpoch: voucher.verifierEpoch,
+    eventIdHash: voucher.eventIdHash,
+    projectId: voucher.projectId,
+    projectSeedHash: voucher.projectSeedHash,
+    metadataHash: voucher.metadataHash,
+    expiresAt: voucher.expiresAt
+  }), key, Buffer.from(voucher.signature, "base64"));
+}
+
 export function periodFor(config, timestamp) {
   if (!Number.isSafeInteger(timestamp)) throw new Error("timestamp must be a safe integer");
   validateCampaignConfig(config);
@@ -251,6 +281,7 @@ export function submitModule(campaign, user, voucher, now) {
   if (voucher.verifierEpoch !== campaign.verifierEpoch) throw new Error("stale verifier epoch");
   if (voucher.user !== user.wallet) throw new Error("voucher user mismatch");
   if (voucher.campaignConfigHash !== campaign.configHash) throw new Error("voucher campaign mismatch");
+  if (!verifyModuleAttestation(voucher, campaign.verifier)) throw new Error("invalid Module Ed25519 signature");
   if (voucher.expiresAt < now) throw new Error("voucher expired");
   assertHash(voucher.eventIdHash, "eventIdHash");
   assertHash(voucher.projectId, "projectId");

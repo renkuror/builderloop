@@ -46,3 +46,4 @@ The previous JavaScript implementation is a behavioral simulation only. No Ancho
 - Baseline on `codex/full-recovery-build` at `758c8f1`: all existing Node/Rust checks pass. The user-owned deletion and untracked prompt file remain unstaged.
 - RED checkpoint `6330ece` covers local reward authority authorization for create/fund/activate/pause/resume/withdraw/close, per-wallet Claim-PDA-equivalent uniqueness, and fixed claim amounts.
 - The matching implementation is pending a green checkpoint. It remains deterministic local-model evidence only: no SPL Token, actual PDA, or local-validator claim is made.
+- Local Module submissions now require an Ed25519 signature over the frozen payload; field or signature substitution is executable-test covered. Anchor instruction-sysvar offsets/parsing remain unimplemented and are not inferred from Node crypto verification.

@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const roots = ["src", "test", "scripts", "web", "docs", ".github"];
+const roots = ["src", "test", "test-support", "scripts", "web", "docs", ".github"];
 const exts = new Set([".js", ".md", ".json", ".yml", ".yaml", ".html", ".css"]);
 let failed = false;
 

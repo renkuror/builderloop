@@ -43,6 +43,29 @@ export function publicKeyBytes(value) {
   return bytes;
 }
 
+/** Encodes exactly 32 bytes as canonical Solana base58 for local test vectors. */
+export function base58PublicKey(bytes) {
+  if (!(bytes instanceof Uint8Array) || bytes.length !== 32) throw new Error("public key must be exactly 32 bytes");
+  const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  const digits = [0];
+  for (const byte of bytes) {
+    let carry = byte;
+    for (let index = 0; index < digits.length; index += 1) {
+      carry += digits[index] << 8;
+      digits[index] = carry % 58;
+      carry = Math.floor(carry / 58);
+    }
+    while (carry > 0) {
+      digits.push(carry % 58);
+      carry = Math.floor(carry / 58);
+    }
+  }
+  let output = "";
+  for (let index = 0; index < bytes.length - 1 && bytes[index] === 0; index += 1) output += "1";
+  for (let index = digits.length - 1; index >= 0; index -= 1) output += alphabet[digits[index]];
+  return output;
+}
+
 export function assertHash(value, name, { allowZero = false } = {}) {
   if (typeof value !== "string" || !HASH_RE.test(value)) {
     throw new Error(`${name} must be a 32-byte lowercase hex hash`);

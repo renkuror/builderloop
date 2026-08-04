@@ -40,3 +40,4 @@ WP3: Module receipt lifecycle and Artifact Lineage hardening.
 - Baseline verification passed: `pnpm run ci` (15 Node tests) and Rust format/clippy/tests (5 tests).
 - RED checkpoint `6330ece` adds executable reward authority, lifecycle, fixed-amount, and one-claim-per-wallet adversarial coverage.
 - GREEN local-model implementation is ready for checkpointing; it is not evidence of an SPL vault or on-chain PDA.
+- Local Module attestation now verifies Ed25519 payload signatures; the Anchor Ed25519 instruction-sysvar requirement remains blocked on the absent on-chain program/toolchain.

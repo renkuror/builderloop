@@ -18,14 +18,15 @@ import {
   submitModule
 } from "../src/protocol.js";
 import { campaignFixture, hashFixture, keys } from "../src/fixtures.js";
+import { moduleTestVerifier, signedVoucher } from "../test-support/module-signing.js";
 
 function activeCampaign() {
-  return startCampaign(freezeCampaign(createCampaign(campaignFixture()), keys.authority), keys.authority);
+  return startCampaign(freezeCampaign(createCampaign(campaignFixture({ verifier: moduleTestVerifier })), keys.authority), keys.authority);
 }
 
 function voucher(campaign, overrides = {}) {
   const seed = hashFixture("project-seed");
-  return {
+  return signedVoucher({
     builderloopProgramId: keys.program,
     campaignAuthority: campaign.authority,
     verifier: campaign.verifier,
@@ -40,7 +41,7 @@ function voucher(campaign, overrides = {}) {
     metadataHash: hashFixture("metadata"),
     expiresAt: 10_000,
     ...overrides
-  };
+  });
 }
 
 function finalizedUser() {

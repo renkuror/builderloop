@@ -12,11 +12,12 @@ import {
   submitModule
 } from "../src/protocol.js";
 import { campaignFixture, hashFixture, keys } from "../src/fixtures.js";
+import { moduleTestVerifier, signedVoucher } from "../test-support/module-signing.js";
 
 function finalizedUser() {
-  const campaign = startCampaign(freezeCampaign(createCampaign(campaignFixture()), keys.authority), keys.authority);
+  const campaign = startCampaign(freezeCampaign(createCampaign(campaignFixture({ verifier: moduleTestVerifier })), keys.authority), keys.authority);
   const seed = hashFixture("ship-seed");
-  const voucher = {
+  const voucher = signedVoucher({
     builderloopProgramId: keys.program,
     campaignAuthority: campaign.authority,
     verifier: campaign.verifier,
@@ -30,7 +31,7 @@ function finalizedUser() {
     projectSeedHash: seed,
     metadataHash: hashFixture("ship-metadata"),
     expiresAt: 2_000
-  };
+  });
   const [pending, receipt] = submitModule(campaign, initUser(campaign, keys.user, keys.user), voucher, 1_010);
   const [user] = finalizeModule(campaign, pending, receipt, 1_040);
   return { campaign, user };
