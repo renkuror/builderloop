@@ -23,6 +23,9 @@ const CONFIG_FIELDS = [
   "actionsPaused"
 ];
 
+// This is the local model's fixed BuilderLoop program identity, never voucher-controlled.
+const BUILDERLOOP_PROGRAM_ID = "QWmroo4YnnMqYW3cnxWkFdaTxGD3P7vMSzwMHGbUzwF";
+
 export function configPayload(config) {
   return Object.fromEntries(CONFIG_FIELDS.map((field) => [field, config[field]]));
 }
@@ -227,6 +230,11 @@ export function initUser(campaign, wallet, signer) {
 export function submitModule(campaign, user, voucher, now) {
   requireCampaignActive(campaign);
   requireUserCampaignBinding(campaign, user);
+  if (voucher.builderloopProgramId !== BUILDERLOOP_PROGRAM_ID) throw new Error("wrong BuilderLoop program domain");
+  if (voucher.campaignAuthority !== campaign.authority) throw new Error("wrong campaign domain");
+  if (voucher.verifier !== campaign.verifier) throw new Error("wrong frozen verifier");
+  if (voucher.moduleNamespace !== campaign.moduleNamespace) throw new Error("wrong frozen module namespace");
+  if (voucher.canonicalizerVersion !== campaign.canonicalizerVersion) throw new Error("wrong frozen canonicalizer version");
   if (!campaign.verifierActive) throw new Error("verifier inactive");
   if (voucher.verifierEpoch !== campaign.verifierEpoch) throw new Error("stale verifier epoch");
   if (voucher.user !== user.wallet) throw new Error("voucher user mismatch");
@@ -255,8 +263,8 @@ export function submitModule(campaign, user, voucher, now) {
 export function finalizeModule(campaign, user, receipt, now) {
   requireCampaignActive(campaign);
   requireUserCampaignBinding(campaign, user);
+  if (receipt.status !== ReceiptStatus.Pending) throw new Error(`receipt must be Pending, got ${receipt.status}`);
   if (user.stage !== UserStage.ModulePending) throw new Error("pending module required");
-  if (receipt.status !== ReceiptStatus.Pending) throw new Error("receipt must be pending");
   if (receipt.verifierEpoch !== campaign.verifierEpoch || !campaign.verifierActive) throw new Error("stale pending receipt");
   if (now < receipt.finalizeAfter) throw new Error("challenge delay not elapsed");
   const modulePeriod = periodFor(campaign, now);
@@ -272,6 +280,77 @@ export function finalizeModule(campaign, user, receipt, now) {
     },
     { ...receipt, status: ReceiptStatus.Finalized }
   ];
+}
+
+export function cancelPendingModule(campaign, user, receipt, signer) {
+  requireCampaignActive(campaign);
+  requireUserCampaignBinding(campaign, user);
+  if (signer !== user.wallet) throw new Error("wallet signer required to cancel pending module");
+  if (receipt.user !== user.wallet) throw new Error("receipt user mismatch");
+  if (receipt.status !== ReceiptStatus.Pending) throw new Error(`receipt must be Pending, got ${receipt.status}`);
+  if (user.stage !== UserStage.ModulePending) throw new Error("pending module required");
+  return [
+    { campaignHash: user.campaignHash, wallet: user.wallet, stage: UserStage.Initialized },
+    { ...receipt, status: ReceiptStatus.Cancelled }
+  ];
+}
+
+/**
+ * Local deterministic account store. It models PDA uniqueness so the pure
+ * transition functions are exercised with replay and duplicate-account rules.
+ */
+export class CampaignLedger {
+  constructor(campaign) {
+    this.campaign = campaign;
+    this.users = new Map();
+    this.receipts = new Map();
+  }
+
+  initUser(wallet, signer) {
+    if (this.users.has(wallet)) throw new Error("UserProgress PDA already exists");
+    const user = initUser(this.campaign, wallet, signer);
+    this.users.set(wallet, user);
+    return user;
+  }
+
+  submitModule(wallet, voucher, now) {
+    if (this.receipts.has(voucher.eventIdHash)) throw new Error("canonical event already used by this campaign");
+    const user = this.requireUser(wallet);
+    const [pendingUser, receipt] = submitModule(this.campaign, user, voucher, now);
+    this.users.set(wallet, pendingUser);
+    this.receipts.set(receipt.eventIdHash, receipt);
+    return receipt;
+  }
+
+  cancelPendingModule(wallet, signer, eventIdHash) {
+    const user = this.requireUser(wallet);
+    const receipt = this.requireReceipt(eventIdHash);
+    const [initializedUser, cancelledReceipt] = cancelPendingModule(this.campaign, user, receipt, signer);
+    this.users.set(wallet, initializedUser);
+    this.receipts.set(eventIdHash, cancelledReceipt);
+    return cancelledReceipt;
+  }
+
+  finalizeModule(wallet, eventIdHash, now) {
+    const user = this.requireUser(wallet);
+    const receipt = this.requireReceipt(eventIdHash);
+    const [finalizedUser, finalizedReceipt] = finalizeModule(this.campaign, user, receipt, now);
+    this.users.set(wallet, finalizedUser);
+    this.receipts.set(eventIdHash, finalizedReceipt);
+    return finalizedUser;
+  }
+
+  requireUser(wallet) {
+    const user = this.users.get(wallet);
+    if (!user) throw new Error("UserProgress PDA does not exist");
+    return user;
+  }
+
+  requireReceipt(eventIdHash) {
+    const receipt = this.receipts.get(eventIdHash);
+    if (!receipt) throw new Error("ModuleReceipt PDA does not exist");
+    return receipt;
+  }
 }
 
 export function recordNativeShip(campaign, user, completion, signer, now) {

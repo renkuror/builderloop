@@ -25,6 +25,11 @@ function activeCampaign() {
 function voucher(campaign, overrides = {}) {
   const seed = hashFixture("project-seed");
   return {
+    builderloopProgramId: keys.program,
+    campaignAuthority: campaign.authority,
+    verifier: campaign.verifier,
+    moduleNamespace: campaign.moduleNamespace,
+    canonicalizerVersion: campaign.canonicalizerVersion,
     campaignConfigHash: campaign.configHash,
     user: keys.user,
     verifierEpoch: campaign.verifierEpoch,
