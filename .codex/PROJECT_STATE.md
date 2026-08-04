@@ -8,7 +8,7 @@ Last updated: 2026-08-05
 - Safety branch: `backup/pre-migration` at the pre-recovery `codex/night-build` tip.
 - Old remote: `https://github.com/Skizm-tzz/builderloop.git`.
 - Requested new remote: `renkuror/builderloop`.
-- GitHub CLI selected `renkuror`, but browser device authorization remains incomplete; do not migrate until `gh api user --jq .login` returns exactly `renkuror`.
+- GitHub CLI verified `renkuror`; migration completed. `origin` is `https://github.com/renkuror/builderloop.git` and `old-origin` preserves the prior repository.
 
 ## Verified work status
 
@@ -29,7 +29,5 @@ The previous JavaScript implementation is a behavioral simulation only. No Ancho
 
 ## Next actions
 
-1. Complete browser authorization using the visible GitHub CLI window, selecting `renkuror`.
-2. Verify account, migrate all branches/tags to the new private repository, and push this branch.
-3. Restart Windows, install Ubuntu WSL, then install pinned Solana and Anchor tooling.
-4. Scaffold the two-program Anchor workspace and implement WP1 with Rust/TypeScript vectors before all later packages.
+1. Restart Windows, install Ubuntu WSL, then install pinned Solana and Anchor tooling.
+2. Scaffold the two-program Anchor workspace and implement WP1 with Rust/TypeScript vectors before all later packages.

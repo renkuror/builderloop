@@ -10,7 +10,7 @@ Audited: 2026-08-05
 - Remote before migration: `origin -> https://github.com/Skizm-tzz/builderloop.git`.
 - Tags: none.
 - Worktree: clean; no untracked files.
-- Active GitHub CLI session: invalid `Skizm-tzz` session. No authenticated account was usable at audit time.
+- Active GitHub CLI session at audit time: invalid `Skizm-tzz` session. Migration later completed under verified `renkuror`; see `MIGRATION_RESULT.md`.
 - Destination requested: `renkuror/builderloop` (private unless an existing repository has user-selected visibility).
 
 ## Installed tools

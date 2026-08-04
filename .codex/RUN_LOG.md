@@ -16,3 +16,4 @@
 - Started official GitHub browser authentication for `renkuror`; authorization is pending.
 - Installed WSL platform components (restart required) and pinned TypeScript 5.9.3 locally.
 - WSL distribution catalog and Chocolatey community repository are currently unreachable.
+- Verified GitHub CLI identity as `renkuror`; migrated `main`, `codex/night-build`, `backup/pre-migration`, and `codex/full-recovery-build` to private `renkuror/builderloop` without rewriting history.
