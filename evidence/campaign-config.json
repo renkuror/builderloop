@@ -1,10 +1,10 @@
 {
-  "authority": "Auth1111111111111111111111111111111111111",
+  "authority": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
   "campaignId": 1,
-  "verifier": "Verif111111111111111111111111111111111111",
+  "verifier": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
   "verifierEpoch": 7,
   "verifierActive": true,
-  "rewardAuthority": "Reward1111111111111111111111111111111111",
+  "rewardAuthority": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
   "startTs": 1000,
   "endTs": 1480,
   "periodSeconds": 60,
@@ -14,8 +14,8 @@
   "moduleChallengeDelay": 30,
   "moduleNamespace": 10,
   "canonicalizerVersion": 1,
-  "sourceProgram": "Cohort1111111111111111111111111111111111",
-  "sourceAuthority": "SrcAuth111111111111111111111111111111111",
+  "sourceProgram": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+  "sourceAuthority": "LbUiWL3xVV8hTFYBVdbTNrpDo41NKS6o3LHHuDzjfcY",
   "challengeId": 42,
   "actionsPaused": false
 }

@@ -1,15 +1,15 @@
 import { sha256Hex } from "./crypto.js";
 
 export const keys = Object.freeze({
-  program: "BLoop1111111111111111111111111111111111111",
-  authority: "Auth1111111111111111111111111111111111111",
-  verifier: "Verif111111111111111111111111111111111111",
-  rewardAuthority: "Reward1111111111111111111111111111111111",
-  sourceProgram: "Cohort1111111111111111111111111111111111",
-  sourceAuthority: "SrcAuth111111111111111111111111111111111",
-  user: "User1111111111111111111111111111111111111",
-  mint: "Mint1111111111111111111111111111111111111",
-  vault: "VauT1111111111111111111111111111111111111"
+  authority: "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+  verifier: "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+  rewardAuthority: "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+  sourceProgram: "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+  sourceAuthority: "LbUiWL3xVV8hTFYBVdbTNrpDo41NKS6o3LHHuDzjfcY",
+  program: "QWmroo4YnnMqYW3cnxWkFdaTxGD3P7vMSzwMHGbUzwF",
+  user: "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
+  mint: "YMN9Qj5jPNp7j14VPcML1B6xGgcPWVZUGLFU3Mnyfaf",
+  vault: "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN"
 });
 
 export function hashFixture(label) {

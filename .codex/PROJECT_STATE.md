@@ -1,6 +1,6 @@
 # BuilderLoop Project State
 
-Last updated: 2026-08-05
+Last updated: 2026-08-05T03:59:25+06:00
 
 ## Repository and migration
 
@@ -27,7 +27,14 @@ The previous JavaScript implementation is a behavioral simulation only. No Ancho
 - TypeScript verification: `.\\node_modules\\.bin\\tsc.cmd --version`.
 - On-chain build/test commands will be added only after the actual Anchor workspace and supported WSL toolchain exist.
 
+## Current execution
+
+- The prior JavaScript implementation has been reclassified as an incomplete protocol sketch, not deployed-program evidence.
+- The current recovery work starts with a dependency-free Rust protocol core plus TypeScript parity vectors, so deterministic P0 behavior remains testable while the validator toolchain is unavailable.
+- `cargo search anchor-cli --limit 1` succeeded after an escalated registry-access retry. The first pinned `anchor-cli 0.32.1` installation attempt was stopped after 60 seconds without a completed build; no partial installation is considered usable.
+
 ## Next actions
 
-1. Restart Windows, install Ubuntu WSL, then install pinned Solana and Anchor tooling.
-2. Scaffold the two-program Anchor workspace and implement WP1 with Rust/TypeScript vectors before all later packages.
+1. Complete and test WP1 deterministic Rust/TypeScript vectors.
+2. Implement and adversarially test the campaign/module/ship/reward protocol core.
+3. Retry local Anchor/Solana installation only through a materially different documented route after a Windows restart; until then, preserve exact local-validator commands and do not claim those tests ran.

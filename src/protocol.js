@@ -1,5 +1,5 @@
 import { CampaignStatus, DOMAINS, ReceiptStatus, RewardStatus, UserStage } from "./constants.js";
-import { assertHash, assertPubkey, canonicalJson, hashObject } from "./crypto.js";
+import { assertHash, assertPubkey, publicKeyBytes, sha256Hex } from "./crypto.js";
 
 const CONFIG_FIELDS = [
   "authority",
@@ -28,8 +28,34 @@ export function configPayload(config) {
 }
 
 export function configHash(config) {
+  return sha256Hex(configBytes(config));
+}
+
+/** Frozen binary layout shared with `builderloop-protocol-core`. */
+export function configBytes(config) {
   validateCampaignConfig(config);
-  return hashObject(DOMAINS.CONFIG, configPayload(config));
+  return Buffer.concat([
+    Buffer.from(DOMAINS.CONFIG),
+    Buffer.from(publicKeyBytes(config.authority)),
+    encodeU64(config.campaignId, "campaignId"),
+    Buffer.from(publicKeyBytes(config.verifier)),
+    encodeU32(config.verifierEpoch, "verifierEpoch"),
+    Buffer.from([Number(config.verifierActive)]),
+    Buffer.from(publicKeyBytes(config.rewardAuthority)),
+    encodeI64(config.startTs, "startTs"),
+    encodeI64(config.endTs, "endTs"),
+    encodeI64(config.periodSeconds, "periodSeconds"),
+    Buffer.from([config.totalPeriods]),
+    Buffer.from([config.minPeriodGap]),
+    encodeI64(config.minElapsedSeconds, "minElapsedSeconds"),
+    encodeI64(config.moduleChallengeDelay, "moduleChallengeDelay"),
+    encodeU16(config.moduleNamespace, "moduleNamespace"),
+    encodeU16(config.canonicalizerVersion, "canonicalizerVersion"),
+    Buffer.from(publicKeyBytes(config.sourceProgram)),
+    Buffer.from(publicKeyBytes(config.sourceAuthority)),
+    encodeU64(config.challengeId, "challengeId"),
+    Buffer.from([Number(config.actionsPaused)])
+  ]);
 }
 
 export function projectId({ programId, campaign, user, projectSeedHash }) {
@@ -37,7 +63,13 @@ export function projectId({ programId, campaign, user, projectSeedHash }) {
   assertPubkey(campaign, "campaign");
   assertPubkey(user, "user");
   assertHash(projectSeedHash, "projectSeedHash");
-  return hashObject(DOMAINS.PROJECT, { programId, campaign, user, projectSeedHash });
+  return sha256Hex(Buffer.concat([
+    Buffer.from(DOMAINS.PROJECT),
+    Buffer.from(publicKeyBytes(programId)),
+    Buffer.from(publicKeyBytes(campaign)),
+    Buffer.from(publicKeyBytes(user)),
+    Buffer.from(projectSeedHash, "hex")
+  ]));
 }
 
 export function attestationBytes(payload) {
@@ -55,17 +87,37 @@ export function attestationBytes(payload) {
   for (const key of required) {
     if (payload[key] === undefined) throw new Error(`attestation missing ${key}`);
   }
-  return `${DOMAINS.MODULE}\n${canonicalJson(payload)}`;
+  assertPubkey(payload.builderloopProgramId, "builderloopProgramId");
+  assertPubkey(payload.campaign, "campaign");
+  assertPubkey(payload.user, "user");
+  assertHash(payload.eventIdHash, "eventIdHash");
+  assertHash(payload.projectId, "projectId");
+  assertHash(payload.projectSeedHash, "projectSeedHash");
+  assertHash(payload.metadataHash, "metadataHash");
+  if (!Number.isInteger(payload.verifierEpoch) || payload.verifierEpoch < 0) throw new Error("verifierEpoch must be a u32");
+  if (!Number.isSafeInteger(payload.expiresAt)) throw new Error("expiresAt must be a safe integer");
+  return Buffer.concat([
+    Buffer.from(DOMAINS.MODULE),
+    Buffer.from(publicKeyBytes(payload.builderloopProgramId)),
+    Buffer.from(publicKeyBytes(payload.campaign)),
+    Buffer.from(publicKeyBytes(payload.user)),
+    encodeU32(payload.verifierEpoch, "verifierEpoch"),
+    Buffer.from(payload.eventIdHash, "hex"),
+    Buffer.from(payload.projectId, "hex"),
+    Buffer.from(payload.projectSeedHash, "hex"),
+    Buffer.from(payload.metadataHash, "hex"),
+    encodeI64(payload.expiresAt, "expiresAt")
+  ]);
 }
 
 export function attestationHash(payload) {
-  return hashObject(DOMAINS.MODULE, payload);
+  return sha256Hex(attestationBytes(payload));
 }
 
 export function periodFor(config, timestamp) {
   if (!Number.isSafeInteger(timestamp)) throw new Error("timestamp must be a safe integer");
   validateCampaignConfig(config);
-  if (timestamp < config.startTs || timestamp > config.endTs) throw new Error("timestamp outside campaign window");
+  if (timestamp < config.startTs || timestamp >= config.endTs) throw new Error("timestamp outside campaign window");
   const elapsed = timestamp - config.startTs;
   if (!Number.isSafeInteger(elapsed) || elapsed < 0) throw new Error("invalid elapsed subtraction");
   const period = Math.floor(elapsed / config.periodSeconds);
@@ -87,14 +139,42 @@ export function validateCampaignConfig(config) {
   }
   if (config.startTs >= config.endTs) throw new Error("campaign start must precede end");
   if (config.periodSeconds <= 0) throw new Error("periodSeconds must be positive");
-  if (!Number.isSafeInteger((config.endTs - config.startTs) / config.periodSeconds)) {
-    throw new Error("campaign duration must divide into periods");
-  }
+  const duration = config.endTs - config.startTs;
+  if (!Number.isSafeInteger(duration) || duration % config.periodSeconds !== 0) throw new Error("campaign duration must divide into periods");
   if (!Number.isInteger(config.totalPeriods) || config.totalPeriods <= 0 || config.totalPeriods > 255) throw new Error("invalid totalPeriods");
+  if (duration / config.periodSeconds !== config.totalPeriods) throw new Error("totalPeriods must match schedule");
   if (!Number.isInteger(config.minPeriodGap) || config.minPeriodGap < 0 || config.minPeriodGap >= config.totalPeriods) throw new Error("invalid minPeriodGap");
   if (config.minElapsedSeconds < 0 || config.moduleChallengeDelay < 0) throw new Error("negative timing gate");
   if (!Number.isInteger(config.moduleNamespace) || !Number.isInteger(config.canonicalizerVersion)) throw new Error("namespace/version must be integers");
   return true;
+}
+
+function encodeU16(value, name) {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffff) throw new Error(`${name} must be a u16`);
+  const bytes = Buffer.alloc(2);
+  bytes.writeUInt16LE(value);
+  return bytes;
+}
+
+function encodeU32(value, name) {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) throw new Error(`${name} must be a u32`);
+  const bytes = Buffer.alloc(4);
+  bytes.writeUInt32LE(value);
+  return bytes;
+}
+
+function encodeU64(value, name) {
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error(`${name} must be an unsigned safe integer`);
+  const bytes = Buffer.alloc(8);
+  bytes.writeBigUInt64LE(BigInt(value));
+  return bytes;
+}
+
+function encodeI64(value, name) {
+  if (!Number.isSafeInteger(value)) throw new Error(`${name} must be a safe integer`);
+  const bytes = Buffer.alloc(8);
+  bytes.writeBigInt64LE(BigInt(value));
+  return bytes;
 }
 
 export function createCampaign(config) {
