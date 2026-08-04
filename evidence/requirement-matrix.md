@@ -10,3 +10,7 @@ This matrix records only commands that executed in this local recovery run. Anch
 | Fixed Module attestation layout | `attestation_bytes`, `attestationBytes` | A05 | same | PASS | pending WP1 checkpoint |
 | Period/reward arithmetic boundary rejection | `period_for`, `required_reward_inventory` | A06-A09 | `cargo test -p builderloop-protocol-core`; `node --test test/wire-vectors.test.js` | PASS | pending WP1 checkpoint |
 | Anchor/local-validator execution | not yet available | H01/H03 | `anchor build`, Anchor integration suite | BLOCKED: Solana/Anchor unavailable | — |
+| Campaign authority, pause/resume, verifier deactivation, and finalization | `src/protocol.js::{pauseActions,resumeActions,deactivateVerifier,finalizeCampaign}` | B05-B09 | `node --test test/campaign-adversarial.test.js` | PASS | pending WP2 checkpoint |
+| Wallet signer and campaign binding | `src/protocol.js::{initUser,requireUserCampaignBinding}` | C01/C02/C05 | `node --test test/campaign-adversarial.test.js` | PASS | pending WP2 checkpoint |
+| Campaign authority, pause/resume, verifier deactivation, and finalization | `src/protocol.js::{pauseActions,resumeActions,deactivateVerifier,finalizeCampaign}` | B05-B09 | `node --test test/campaign-adversarial.test.js` | PASS | pending WP2 checkpoint |
+| Wallet signer and campaign binding | `src/protocol.js::{initUser,requireUserCampaignBinding}` | C01/C02/C05 | `node --test test/campaign-adversarial.test.js` | PASS | pending WP2 checkpoint |

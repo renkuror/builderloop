@@ -194,6 +194,24 @@ export function startCampaign(campaign, signer) {
   return { ...campaign, status: CampaignStatus.Active };
 }
 
+export function pauseActions(campaign, signer) {
+  requireAuthority(campaign, signer);
+  if (![CampaignStatus.Frozen, CampaignStatus.Active].includes(campaign.status)) throw new Error("campaign must be Frozen or Active");
+  return { ...campaign, actionsPaused: true };
+}
+
+export function resumeActions(campaign, signer) {
+  requireAuthority(campaign, signer);
+  if (![CampaignStatus.Frozen, CampaignStatus.Active].includes(campaign.status)) throw new Error("campaign must be Frozen or Active");
+  return { ...campaign, actionsPaused: false };
+}
+
+export function finalizeCampaign(campaign, signer) {
+  requireAuthority(campaign, signer);
+  if (![CampaignStatus.Frozen, CampaignStatus.Active].includes(campaign.status)) throw new Error("campaign must be Frozen or Active");
+  return { ...campaign, status: CampaignStatus.Finalized, actionsPaused: true };
+}
+
 export function deactivateVerifier(campaign, signer) {
   requireAuthority(campaign, signer);
   if (![CampaignStatus.Frozen, CampaignStatus.Active].includes(campaign.status)) throw new Error("invalid campaign status");
@@ -208,6 +226,7 @@ export function initUser(campaign, wallet, signer) {
 
 export function submitModule(campaign, user, voucher, now) {
   requireCampaignActive(campaign);
+  requireUserCampaignBinding(campaign, user);
   if (!campaign.verifierActive) throw new Error("verifier inactive");
   if (voucher.verifierEpoch !== campaign.verifierEpoch) throw new Error("stale verifier epoch");
   if (voucher.user !== user.wallet) throw new Error("voucher user mismatch");
@@ -235,6 +254,7 @@ export function submitModule(campaign, user, voucher, now) {
 
 export function finalizeModule(campaign, user, receipt, now) {
   requireCampaignActive(campaign);
+  requireUserCampaignBinding(campaign, user);
   if (user.stage !== UserStage.ModulePending) throw new Error("pending module required");
   if (receipt.status !== ReceiptStatus.Pending) throw new Error("receipt must be pending");
   if (receipt.verifierEpoch !== campaign.verifierEpoch || !campaign.verifierActive) throw new Error("stale pending receipt");
@@ -256,6 +276,7 @@ export function finalizeModule(campaign, user, receipt, now) {
 
 export function recordNativeShip(campaign, user, completion, signer, now) {
   requireCampaignActive(campaign);
+  requireUserCampaignBinding(campaign, user);
   if (signer !== user.wallet) throw new Error("user signs the Ship transaction");
   if (user.stage !== UserStage.ModuleFinalized) throw new Error("module must be finalized before Ship");
   if (completion.owner !== campaign.sourceProgram) throw new Error("wrong source owner/program");
@@ -295,6 +316,7 @@ export function activateReward(reward, now) {
 }
 
 export function claimReward(campaign, reward, user, recipient, signer, now) {
+  requireUserCampaignBinding(campaign, user);
   if (signer !== user.wallet) throw new Error("claim signer mismatch");
   if (user.stage !== UserStage.Shipped) throw new Error("user has not shipped");
   if (reward.status !== RewardStatus.Active) throw new Error("reward inactive");
@@ -316,4 +338,8 @@ function requireCampaignActive(campaign) {
   if (campaign.status !== CampaignStatus.Active) throw new Error("campaign active status required");
   if (campaign.actionsPaused) throw new Error("campaign actions paused");
   if (!campaign.configHash) throw new Error("campaign must snapshot config hash");
+}
+
+function requireUserCampaignBinding(campaign, user) {
+  if (user.campaignHash !== campaign.configHash) throw new Error("user campaign binding mismatch");
 }

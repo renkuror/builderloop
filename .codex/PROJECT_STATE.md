@@ -32,6 +32,8 @@ The previous JavaScript implementation is a behavioral simulation only. No Ancho
 - The prior JavaScript implementation has been reclassified as an incomplete protocol sketch, not deployed-program evidence.
 - The current recovery work starts with a dependency-free Rust protocol core plus TypeScript parity vectors, so deterministic P0 behavior remains testable while the validator toolchain is unavailable.
 - `cargo search anchor-cli --limit 1` succeeded after an escalated registry-access retry. The first pinned `anchor-cli 0.32.1` installation attempt was stopped after 60 seconds without a completed build; no partial installation is considered usable.
+- WP1 is verified in commit `fd36768`: Rust/Node binary bytes, SHA-256 hashes, project commitment, Module payload vectors, schedule bounds, and reward capacity are covered by executable local tests.
+- WP2 is locally verified and awaiting its checkpoint commit: authority-gated campaign lifecycle controls and user campaign binding are covered by focused negative tests plus the full Node suite.
 
 ## Next actions
 

@@ -20,3 +20,5 @@
 - Overnight recovery preflight: verified active branch `codex/full-recovery-build` at `afc7a03`, checked remotes, inspected the specification/work plan/test matrix/checklist/reports/state files, and confirmed the implementation is JavaScript-only rather than an Anchor workspace.
 - Verified Git 2.55.0, Rust/Cargo 1.96.0, Node 24.14.1, pnpm 11.9.0, and TypeScript 5.9.3. Solana, Anchor, and AVM are unavailable. WSL returns `E_ACCESSDENIED` in this non-restarted session.
 - Retried registry access with `cargo search anchor-cli --limit 1`; it passed. Began pinned `anchor-cli 0.32.1` user-local installation and safely stopped the bounded attempt after 60 seconds without completion.
+- WP1 completed locally: added a dependency-free Rust protocol core, frozen binary CampaignConfig/project/Module layouts, Node parity code, and executable wire/overflow vectors. Rust clippy/tests and all existing pnpm checks passed before commit `fd36768` was pushed.
+- WP2 in progress: added authority-gated pause/resume/finalization and campaign-bound user-state checks. Focused adversarial Node tests pass.
