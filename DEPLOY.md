@@ -1,16 +1,9 @@
-# Deployment
+# Deployment Status
 
-Devnet deployment is blocked in the current environment because `solana` and `anchor` are not installed in PATH.
+## NOT EXECUTED — POST-AUDIT PHASE
 
-Expected future path:
+Devnet deployment is intentionally excluded from this run. No public-network wallet, SOL, RPC configuration, deployment, or transaction was requested or used.
 
-```bash
-solana --version
-anchor --version
-anchor build
-anchor test
-solana config set --url devnet
-anchor deploy
-```
+The only supported release target for this codebase is a future local-validator test environment after a real Anchor workspace, CohortBuild program, and SPL vault implementation exist. The current JavaScript and dependency-free Rust checks do not constitute deployable Solana programs.
 
-Do not record Devnet addresses or transaction links until those commands have run successfully with a safe Devnet keypair and funded test wallet.
+Before any post-audit deployment work, a reviewer must verify the Anchor account constraints, Ed25519 instruction-sysvar parsing, CPI source binding, token-program constraints, and close-rent destinations. No network commands are supplied here because the required on-chain implementation does not yet exist.

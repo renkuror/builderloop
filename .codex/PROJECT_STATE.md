@@ -40,3 +40,9 @@ The previous JavaScript implementation is a behavioral simulation only. No Ancho
 1. Complete and test WP1 deterministic Rust/TypeScript vectors.
 2. Implement and adversarially test the campaign/module/ship/reward protocol core.
 3. Retry local Anchor/Solana installation only through a materially different documented route after a Windows restart; until then, preserve exact local-validator commands and do not claim those tests ran.
+
+## 2026-08-05 continuation
+
+- Baseline on `codex/full-recovery-build` at `758c8f1`: all existing Node/Rust checks pass. The user-owned deletion and untracked prompt file remain unstaged.
+- RED checkpoint `6330ece` covers local reward authority authorization for create/fund/activate/pause/resume/withdraw/close, per-wallet Claim-PDA-equivalent uniqueness, and fixed claim amounts.
+- The matching implementation is pending a green checkpoint. It remains deterministic local-model evidence only: no SPL Token, actual PDA, or local-validator claim is made.

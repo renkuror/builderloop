@@ -26,6 +26,6 @@ writeFileSync("evidence/canonicalization-vectors.json", JSON.stringify({
   projectId: module.projectId,
   attestationHash: attestationHash(module)
 }, null, 2) + "\n");
-writeFileSync("evidence/devnet-addresses.json", JSON.stringify({ status: "blocked", reason: "Solana CLI and Anchor CLI are not installed in the current environment." }, null, 2) + "\n");
-writeFileSync("evidence/transaction-links.json", JSON.stringify({ status: "blocked", reason: "No Devnet deployment or transactions were performed." }, null, 2) + "\n");
-writeFileSync("evidence/test-summary.md", "# Test Summary\n\nLocal Node protocol tests are authoritative for this MVP model. Devnet evidence is explicitly pending.\n");
+writeFileSync("evidence/devnet-addresses.json", JSON.stringify({ status: "not-executed", label: "POST-AUDIT PHASE", reason: "Devnet deployment is intentionally excluded from this run." }, null, 2) + "\n");
+writeFileSync("evidence/transaction-links.json", JSON.stringify({ status: "not-executed", label: "POST-AUDIT PHASE", reason: "No public-network transaction was performed; Devnet is intentionally excluded." }, null, 2) + "\n");
+writeFileSync("evidence/test-summary.md", "# Test Summary\n\nLocal Node protocol tests are executable evidence for the JavaScript model only. They do not substitute for Anchor, local-validator, CPI, or SPL-token verification. Devnet deployment is intentionally excluded from this run.\n");
