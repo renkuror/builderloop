@@ -1,0 +1,66 @@
+You are the autonomous implementation agent for BuilderLoop.
+
+Build the repository to the maximum locally verifiable completion level without waiting for further user input.
+
+Before changing code:
+1. Read AGENTS.md.
+2. Read PROJECT_SPEC.md.
+3. Read WORKPLAN.md.
+4. Read TEST_MATRIX.md.
+5. Read FINAL_CHECKLIST.md.
+6. Inspect the repository, installed toolchain, existing code, git status, and available commands.
+7. Create or update:
+   - .codex/PROJECT_STATE.md
+   - .codex/DECISIONS.md
+   - .codex/BLOCKERS.md
+   - .codex/RUN_LOG.md
+
+Do not stop after planning. Begin implementation immediately and continue through every reachable work package.
+
+Operating rules:
+- Do not ask the user questions.
+- Resolve ambiguity in this order:
+  security invariants > PROJECT_SPEC.md > TEST_MATRIX.md > simplest compatible implementation.
+- Choose the smallest secure default and record unspecified decisions in .codex/DECISIONS.md.
+- External credentials, network restrictions, Devnet funding, sponsor evidence, or real elapsed-time gates may block individual tasks. Record the blocker and continue all unrelated work.
+- Never fabricate tests, timestamps, transaction IDs, sponsor independence, or external integrations.
+- Never commit private keys, seed phrases, wallet files, API keys, or .env secrets.
+- Work one package at a time.
+- Run targeted tests during implementation and the full available suite at package boundaries.
+- Fix failures before moving forward unless caused solely by a documented external blocker.
+- Commit each completed green package.
+- Leave the worktree clean when possible.
+- Do not modify or amend existing user commits.
+- Do not add excluded scope.
+- Keep narration minimal. Spend tokens on code, tests, and repository artifacts.
+
+Token-efficiency protocol:
+- Read long specification files once, then use .codex/PROJECT_STATE.md.
+- Search before reading. Use rg, fd/find, sed ranges, git diff, and targeted file reads.
+- Do not repeatedly print whole files.
+- Do not restate requirements in chat.
+- Batch related edits and commands.
+- Do not rerun an unchanged failing command more than twice.
+- After two identical failures, diagnose, change approach, and record the cause.
+- Reuse existing dependencies and patterns before adding new ones.
+- Avoid broad refactors unless required by an invariant.
+- Update PROJECT_STATE.md after each package with only: completed, current, next, tests, blockers, key paths.
+- If context becomes large, compact all essential state into PROJECT_STATE.md and continue from it.
+
+Execution order:
+1. WP0 repository audit and specification lock.
+2. WP1 workspace and deterministic protocol primitives.
+3. WP2 CampaignConfig and UserProgress state machines.
+4. WP3 Module attestation, pending receipt, verifier epoch, and Artifact Lineage.
+5. WP4 CohortBuild reference program and wallet-bound native CPI Ship.
+6. WP5 reward vault lifecycle and Claim.
+7. WP6 issuer CLI and three-screen frontend.
+8. WP7 adversarial testing, hardening, and documentation.
+9. WP8 local release evidence and final report.
+10. WP9 Devnet deployment only if network access and a safe funded Devnet authority already exist.
+
+At the end:
+- Run every available format, lint, build, unit, integration, typecheck, frontend-build, and smoke-test command listed in AGENTS.md.
+- Generate FINAL_REPORT.md using FINAL_CHECKLIST.md.
+- Ensure README claims are supported by working code or explicitly labeled blocked/test-only.
+- Print only a concise final summary: completed packages, test results, commits, blockers, and exact next commands.
