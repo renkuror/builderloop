@@ -22,18 +22,38 @@ Last updated: 2026-08-05
 
 ## Commands
 
-Current bootstrap commands:
+Verified local commands:
 
 - Format: `pnpm format`
-- Rust lint/build/tests: blocked until Solana/Anchor or Rust workspace is scaffolded
+- Lint: `pnpm lint`
+- Typecheck substitute: `pnpm typecheck`
+- Unit tests: `pnpm test`
+- Local build: `pnpm build`
+- Frontend build: `pnpm frontend:build`
+- Full local suite: `pnpm run ci`
+- Evidence export: `pnpm evidence`
+- Secret scan: `pnpm secrets`
+- Rust lint/build/tests: blocked until Solana/Anchor workspace is scaffolded
 - TypeScript typecheck: `pnpm typecheck`
 - Frontend build: `pnpm build`
 - Tests: `pnpm test`
-- Secret scan: `pwsh`/PowerShell `rg` patterns documented in run log
 
 ## Current Package
 
-WP0: audit, specification lock, Git/GitHub setup.
+WP1 local model is green on `codex/night-build`.
+
+Implemented locally:
+
+- deterministic config hash and project ID helpers;
+- Module voucher hash surface;
+- campaign freeze/start and authority checks;
+- user initialization and Module pending/finalized transitions;
+- stale verifier and challenge delay checks;
+- same-wallet same-project native Ship validation;
+- fixed reward funding/activation/claim lifecycle;
+- CLI commands and evidence export;
+- static Campaign, Progress, and Reward screens;
+- GitHub Actions CI for local checks.
 
 ## Blockers
 

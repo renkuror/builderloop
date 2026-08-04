@@ -1,0 +1,18 @@
+{
+  "name": "builderloop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "format": "node scripts/check-format.js",
+    "lint": "node scripts/lint.js",
+    "typecheck": "node scripts/typecheck.js",
+    "test": "node --test",
+    "build": "node scripts/build.js",
+    "frontend:build": "node scripts/build-frontend.js",
+    "ci": "pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm frontend:build",
+    "secrets": "node scripts/secret-scan.js",
+    "evidence": "node scripts/export-evidence.js"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "authority": "Auth1111111111111111111111111111111111111",
+  "campaignId": 1,
+  "verifier": "Verif111111111111111111111111111111111111",
+  "verifierEpoch": 7,
+  "verifierActive": true,
+  "rewardAuthority": "Reward1111111111111111111111111111111111",
+  "startTs": 1000,
+  "endTs": 1480,
+  "periodSeconds": 60,
+  "totalPeriods": 8,
+  "minPeriodGap": 2,
+  "minElapsedSeconds": 120,
+  "moduleChallengeDelay": 30,
+  "moduleNamespace": 10,
+  "canonicalizerVersion": 1,
+  "sourceProgram": "Cohort1111111111111111111111111111111111",
+  "sourceAuthority": "SrcAuth111111111111111111111111111111111",
+  "challengeId": 42,
+  "actionsPaused": false
+}

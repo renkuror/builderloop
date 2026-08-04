@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BuilderLoop MVP</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header>
+      <h1>BuilderLoop</h1>
+      <nav aria-label="Screens">
+        <a href="#campaign">Campaign</a>
+        <a href="#progress">Progress</a>
+        <a href="#reward">Reward</a>
+      </nav>
+    </header>
+    <main>
+      <section id="campaign">
+        <h2>Campaign</h2>
+        <dl>
+          <dt>Authority</dt><dd>Test campaign authority</dd>
+          <dt>Verifier</dt><dd>Fixed Module verifier, frozen at epoch 7</dd>
+          <dt>Source</dt><dd>CohortBuild native completion program</dd>
+          <dt>Gap</dt><dd>120 seconds and 2 periods after Module finalization</dd>
+          <dt>Privacy</dt><dd>Wallet, project commitment, and artifact hashes are public in local evidence.</dd>
+        </dl>
+        <code id="configHash">config hash pending</code>
+      </section>
+      <section id="progress">
+        <h2>Progress</h2>
+        <ol>
+          <li data-state="done">Module attested</li>
+          <li data-state="done">Module finalized after challenge delay</li>
+          <li data-state="locked">Ship locked until elapsed time and period gap are satisfied</li>
+          <li data-state="locked">Reward claim requires Shipped stage</li>
+        </ol>
+        <p id="lockReason">Earliest local eligible time: timestamp 1180.</p>
+      </section>
+      <section id="reward">
+        <h2>Reward</h2>
+        <dl>
+          <dt>Authority</dt><dd>Separate test reward authority</dd>
+          <dt>Amount</dt><dd>100 fixed SPL units per claim</dd>
+          <dt>Inventory</dt><dd>1 local fixture claim</dd>
+          <dt>Status</dt><dd>Funding and claims are simulated locally; no Devnet payout is claimed.</dd>
+        </dl>
+        <button type="button" id="claimButton">Claim Preview</button>
+        <output id="claimOutput">Not connected to a wallet.</output>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
