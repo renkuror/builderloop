@@ -1,93 +1,108 @@
 # BuilderLoop Final Report
 
 ## Status
-PARTIAL
 
-## Execution duration
-2026-08-05T03:59:25+06:00 through 2026-08-05T04:26:36+06:00.
+COMPLETE for the mandated localnet scope. Devnet/mainnet are explicitly excluded.
 
-## Starting commit
-`afc7a0329b12c3de3f23e38cb54206bf392b0b47`
+## Completed work packages
 
-## Final commit
-This report is included in the recovery checkpoint created at the end of this execution; inspect `HEAD` for its exact immutable ID.
+- WP0: repository/specification audit, frozen layouts, toolchain pin and state records.
+- WP1: Anchor workspace plus deterministic Rust/JavaScript config, project, attestation, period, and capacity primitives.
+- WP2: CampaignConfig and UserProgress accounts and authority/stage state machines.
+- WP3: exact Ed25519 instruction-sysvar parsing, one-use ModuleReceipt pending/cancel/finalize flow, verifier epoch invalidation, and Artifact Lineage.
+- WP4: CohortBuild Challenge/BuildSubmission/Completion and wallet-bound source-PDA-signed CPI Ship.
+- WP5: classic SPL Token Reward/Claim/vault lifecycle with fixed claims and deadline-gated remainder settlement.
+- WP6: localnet issuer/reward CLI and three-screen wallet-connected account reader/claim client.
+- WP7: adversarial local/model suites, lint hardening, secret scan, architecture/threat/trust truth review.
+- WP8: reproducible local genesis execution, evidence artifacts, deployment/demo docs, and final report.
 
-## Verified completed work packages
+## Repository architecture
 
-- WP1: dependency-free Rust deterministic protocol core, binary configuration/project/Module layouts, Node parity implementation, and cross-language vectors.
-- WP2: campaign lifecycle authority checks, pause/resume/finalization, verifier deactivation, and campaign-bound user progress tests.
+- `programs/builderloop`: campaign, Module, Ship, Reward, and Claim program.
+- `programs/cohort-build`: reference source program and native CPI.
+- `crates/protocol-core`, `src/protocol.js`: deterministic parity vectors/reference model.
+- `tests/anchor/localnet.test.js`: real validator, CPI, token, and adversarial execution.
+- `cli/builderloop.js`: localnet issuer/reward operator commands.
+- `web/`: Campaign, Progress, and Reward wallet client.
 
-## Incomplete work packages
+## Security invariants implemented
 
-- WP3-WP8 remain incomplete. The local receipt ledger now covers cancellation and replay retention, but it is not an Anchor account implementation and does not inspect Solana Ed25519 instructions.
-- No actual BuilderLoop/CohortBuild Anchor programs, SPL vault CPI lifecycle, wallet-connected client, or local-validator integration suite exists.
+- Frozen deterministic eligibility hash and immutable critical identities.
+- Ordered signer-bound progression; pending Module cannot Ship.
+- Exact one-signature Ed25519 offsets/key/message/domain inspection and event PDA replay resistance.
+- Current verifier epoch required at submission/finalization; deactivation invalidates pending receipts.
+- Solana Clock campaign, elapsed-time, challenge-delay, and period gates with checked arithmetic.
+- Exact source owner/program/authority/discriminator/layout/PDA/bump/user/project/challenge/artifact validation.
+- CohortBuild source PDA signs the atomic native CPI; Completion is serialized before CPI.
+- Reward snapshots config hash, uses classic SPL Token and a Reward-controlled vault, fixes claim amount, binds recipient owner/mint, and permits one Claim PDA per wallet.
+- Deadline-gated remainder withdrawal and explicit Reward/vault rent destination.
 
-## Implemented end-to-end flow
-
-The local protocol core exercises deterministic config/project/attestation bytes and the JavaScript model reaches pending Module, finalized Module, native Ship validation, and fixed-amount local reward transitions. This is not a substitute for the required on-chain CPI flow.
-
-## Requirement-to-evidence matrix
-
-See `evidence/requirement-matrix.md`.
-
-## Test commands and results
+## Tests
 
 | Command | Result | Notes |
 |---|---|---|
-| `cargo fmt --check` | PASS | Rust protocol core |
-| `cargo clippy -p builderloop-protocol-core --all-targets -- -D warnings` | PASS | Rust protocol core |
-| `cargo test -p builderloop-protocol-core` | PASS, 5 tests | deterministic vectors and checked boundaries |
-| `pnpm run ci` | PASS, 15 Node tests | format, lint, typecheck, test, build, frontend build |
-| `pnpm evidence` | PASS | local/test artifacts only |
-| `pnpm secrets` | PASS | no tracked secret finding |
-| `anchor build` / local validator tests | NOT RUN | Anchor and Solana CLI unavailable |
+| `cargo fmt --check` | PASS | Entire Rust workspace |
+| `cargo clippy --workspace --all-targets -- -D warnings` | PASS | No accepted warnings |
+| `cargo test --workspace` | PASS | 7 Rust unit/vector tests including program IDs |
+| `anchor build` | PASS | BuilderLoop and CohortBuild SBF/IDL artifacts |
+| `anchor test --skip-build` | PASS | Real local validator; Ed25519, receipt, CPI, SPL, pause/replay/epoch/withdraw/close adversarial flow |
+| `pnpm run ci` | PASS | 16 Node tests, format/lint/typecheck/build and production frontend bundle |
+| `pnpm evidence` | PASS | Local/test-only artifacts regenerated |
+| `pnpm secrets` | PASS | Ignored validator/build sockets and artifacts excluded; no finding |
 
-## Commits created
+## Commits
 
-- `fd36768` — feat: add deterministic protocol core and vectors
-- `8ef0042` — feat: harden campaign and user state
-- recovery checkpoint — pending at report generation
+- `fd36768` — deterministic protocol core and vectors.
+- `8ef0042` — campaign and user state hardening.
+- `758c8f1` — preserved Module-ledger checkpoint.
+- `816a113` — real on-chain progression and reward flow.
+- `a2f7081` — wallet client, CLI, and expanded adversarial localnet flows.
+- Final documentation/checklist commit: inspect `HEAD`.
 
-## Current branch and remote
+## Local demo
 
-- Branch: `codex/full-recovery-build`
-- Remote: `origin` → `https://github.com/renkuror/builderloop.git`
+1. `scripts/prepare-localnet.sh`
+2. `anchor build`
+3. `anchor test --skip-build`
+4. `pnpm frontend:build`
+5. `python3 -m http.server 4173 --directory dist/web`
 
-## Pull Request
+The validator test creates ephemeral real accounts and transitions Module pending → finalized → native CPI Shipped → fixed SPL Claim, then proves negative and terminal reward paths.
 
-Not created or updated during this run.
+## Devnet evidence
 
-## Tools installed
-
-No new durable tool installation completed. Git 2.55.0, Rust/Cargo 1.96.0, Node 24.14.1, pnpm 11.9.0, and TypeScript 5.9.3 were verified.
+- Not produced. Devnet is absolutely excluded by the requested scope.
+- `evidence/devnet-addresses.json` and `evidence/transaction-links.json` state `not-produced`; no links or signatures are fabricated.
 
 ## External blockers
 
-- Solana CLI and Anchor CLI are not installed.
-- WSL reports `E_ACCESSDENIED` and needs a Windows restart before its supported Linux route can be used.
-- The first bounded `cargo install --version 0.32.1 anchor-cli --locked` attempt did not complete within 60 seconds.
-- Devnet deployment: intentionally excluded from this run.
+- None for localnet scope.
+- No independent sponsor, organic retention, external adoption, or off-chain payout evidence is claimed.
 
 ## Known limitations
 
-- The deployed-program, Ed25519 instruction-sysvar, real PDA, SPL token, native CPI, and local-validator claims are not made.
-- The web surface remains a static local preview rather than wallet/program-state integration.
+- One fixed campaign topology, verifier, source, and reward authority; no generic builder or verifier registry.
+- Trusted verifier and configured source semantics remain explicit trust boundaries.
+- Browser wallet behavior is production-bundled and smoke-checked; extension UI automation is not part of the local headless suite.
+- Local validator transaction signatures are ephemeral and intentionally not presented as durable explorer evidence.
 
-## Manual security review hotspots
+## Exact next commands
 
-- Transfer the frozen layouts from `crates/protocol-core` exactly into Anchor account handlers.
-- Implement and test Ed25519 instruction offsets/message matching before accepting Module vouchers.
-- Bind Completion owner, discriminator, PDA, source authority, and CPI signer in the actual source program.
-- Validate token program/mint/vault authority and close/rent destinations in the real reward program.
-
-## Exact continuation commands
-
-```powershell
-cargo test -p builderloop-protocol-core
-pnpm run ci
-# After a Windows restart and supported toolchain installation:
-solana --version
-anchor --version
+```sh
+scripts/prepare-localnet.sh
 anchor build
-anchor test
+anchor test --skip-build
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+pnpm run ci
+pnpm evidence
+pnpm secrets
 ```
+
+## Manual review hotspots
+
+- Campaign hash field order and intentional operational verifier deactivation after freeze.
+- Ed25519 one-signature header, `u16::MAX` instruction indices, offsets, and exact message bytes.
+- Completion serialization before CPI and source-authority signer metadata.
+- Completion owner/discriminator/exact length/PDA/bump and frozen field comparisons.
+- Reward signer seeds, classic token-program restriction, recipient constraints, and Reward/vault close destinations.

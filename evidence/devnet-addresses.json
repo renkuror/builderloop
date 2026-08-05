@@ -1,4 +1,4 @@
 {
-  "status": "blocked",
-  "reason": "Solana CLI and Anchor CLI are not installed in the current environment."
+  "status": "not-produced",
+  "reason": "Devnet is explicitly excluded; localnet only."
 }

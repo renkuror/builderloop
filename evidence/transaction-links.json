@@ -1,4 +1,4 @@
 {
-  "status": "blocked",
-  "reason": "No Devnet deployment or transactions were performed."
+  "status": "not-produced",
+  "reason": "No Devnet transactions were performed; ephemeral local signatures are not durable explorer evidence."
 }
