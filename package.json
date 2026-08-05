@@ -1,0 +1,28 @@
+{
+  "name": "builderloop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "format": "node scripts/check-format.js",
+    "lint": "node scripts/lint.js",
+    "typecheck": "node scripts/typecheck.js",
+    "test": "node --test test/*.test.js",
+    "build": "node scripts/build.js",
+    "frontend:build": "node scripts/build-frontend.js",
+    "anchor:test": "node --test --test-concurrency=1 tests/anchor/*.test.js",
+    "anchor:build": "anchor build",
+    "ci": "pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm frontend:build",
+    "secrets": "node scripts/secret-scan.js",
+    "evidence": "node scripts/export-evidence.js"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "0.32.1",
+    "@solana/spl-token": "0.4.14",
+    "@solana/web3.js": "1.98.4",
+    "buffer": "6.0.3",
+    "esbuild": "0.25.9",
+    "typescript": "5.9.3"
+  }
+}

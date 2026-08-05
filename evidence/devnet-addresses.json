@@ -1,0 +1,4 @@
+{
+  "status": "not-produced",
+  "reason": "Devnet is explicitly excluded; localnet only."
+}

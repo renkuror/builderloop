@@ -20,6 +20,7 @@ target/
 
 # Node and frontend output
 node_modules/
+.pnpm-store/
 .next/
 dist/
 build/

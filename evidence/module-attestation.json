@@ -1,0 +1,12 @@
+{
+  "builderloopProgramId": "3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2",
+  "campaign": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+  "user": "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
+  "verifierEpoch": 7,
+  "eventIdHash": "ca135fbd44c2d9bb5ee0c598276ccba5f463491580416f90a7578f54c6b0d41a",
+  "projectId": "c9b9853b2917ba67a949077909db2683d398508beffc2d206b176e3f77280ed8",
+  "projectSeedHash": "b5bdbea2c4758774a66540cd7cb19e91c801ae881cf87dec428e41b5fb2eaf1c",
+  "metadataHash": "20054e3f59e3c4ee095c967d2c66e21745a501c389a52242083e78e5294385bb",
+  "expiresAt": 10000,
+  "attestationHash": "06e845a2c911d99fd4a71f828faceb71b449295ae694e80ab6ceee148924e8a1"
+}

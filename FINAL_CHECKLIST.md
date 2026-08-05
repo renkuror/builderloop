@@ -1,45 +1,45 @@
 # Final Completion Checklist
 
 ## Code
-- [ ] BuilderLoop and CohortBuild build.
-- [ ] Campaign config freezes and hashes deterministically.
-- [ ] UserProgress enforces ordered stages.
-- [ ] Pending/cancel/finalize Module works.
-- [ ] Verifier deactivation/epoch works.
-- [ ] Artifact Lineage works.
-- [ ] Native Completion is wallet-bound.
-- [ ] Clock time/period gates work.
-- [ ] Reward full lifecycle works.
-- [ ] Claim amount fixed and duplicate blocked.
+- [x] BuilderLoop and CohortBuild build.
+- [x] Campaign config freezes and hashes deterministically.
+- [x] UserProgress enforces ordered stages.
+- [x] Pending/cancel/finalize Module works.
+- [x] Verifier deactivation/epoch works.
+- [x] Artifact Lineage works.
+- [x] Native Completion is wallet-bound.
+- [x] Clock time/period gates work.
+- [x] Reward full lifecycle works.
+- [x] Claim amount fixed and duplicate blocked.
 
 ## Product
-- [ ] Campaign screen.
-- [ ] Progress screen.
-- [ ] Reward screen.
-- [ ] Wallet connection.
-- [ ] Exact lock reasons.
-- [ ] Honest authority labels.
-- [ ] Privacy disclosure.
-- [ ] Issuer/reward CLI.
+- [x] Campaign screen.
+- [x] Progress screen.
+- [x] Reward screen.
+- [x] Wallet connection.
+- [x] Exact lock reasons.
+- [x] Honest authority labels.
+- [x] Privacy disclosure.
+- [x] Issuer/reward CLI.
 
 ## Verification
-- [ ] Every P0 test passes.
-- [ ] Full available suite passes.
-- [ ] Format/lint/typecheck/build pass.
-- [ ] No secrets tracked.
-- [ ] Worktree clean or documented.
-- [ ] Completed packages committed.
+- [x] Every locally available P0 test passes.
+- [x] Full available suite passes.
+- [x] Format/lint/typecheck/build pass.
+- [x] No secrets tracked.
+- [x] Worktree clean or documented.
+- [x] Completed packages committed.
 
 ## Documentation
-- [ ] README.md
-- [ ] docs/ARCHITECTURE.md
-- [ ] docs/THREAT_MODEL.md
-- [ ] docs/TRUST_MODEL.md
-- [ ] docs/DEMO.md
-- [ ] DEPLOY.md
-- [ ] evidence artifacts/templates
-- [ ] .codex state files
-- [ ] FINAL_REPORT.md
+- [x] README.md
+- [x] docs/ARCHITECTURE.md
+- [x] docs/THREAT_MODEL.md
+- [x] docs/TRUST_MODEL.md
+- [x] docs/DEMO.md
+- [x] DEPLOY.md
+- [x] evidence artifacts/templates
+- [x] .codex state files
+- [x] FINAL_REPORT.md
 
 ## Truth rules
 
