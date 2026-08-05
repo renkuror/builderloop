@@ -40,3 +40,13 @@ The project pins `pnpm@11.9.0` and `typescript@5.9.3`. The planned on-chain stac
 - Restart Windows to activate WSL components.
 - Install an Ubuntu WSL distribution after restart.
 - Install the pinned Solana and Anchor tools inside WSL; current shell cannot safely verify them until the distribution is available.
+
+## WSL installation result
+
+The blocker above is historical. Ubuntu/WSL now verifies Rust/Cargo 1.97.1, Node 24.16.0, pnpm 11.9.0, Agave/Solana CLI and validator 4.1.1, and Anchor CLI 0.32.1. Anchor 0.32.1 was installed user-locally with:
+
+```sh
+cargo install anchor-cli --version 0.32.1 --locked --force
+```
+
+Both `anchor build` and `anchor test --skip-build` run successfully against localnet. Devnet remains excluded.

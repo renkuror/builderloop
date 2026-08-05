@@ -7,3 +7,8 @@
 - Solana CLI and Anchor CLI remain unavailable until WSL is operational and their official installer runs.
 - `npm.ps1` is blocked by PowerShell execution policy; use `pnpm` or `npm.cmd`.
 - 2026-08-05 recovery: `cargo search anchor-cli --limit 1` proved registry access is available, but `cargo install --version 0.32.1 anchor-cli --locked` did not complete within the 60-second bounded attempt. It was safely terminated. Anchor and Solana local-validator tests are therefore not executable in this Windows session.
+
+## Resolved in WSL
+
+- Solana/validator and Anchor are now installed and verified; SBF build and local-validator integration tests execute successfully.
+- AVM 1.1.2 cannot manage the pinned 0.32.1 binary in this sandbox and is intentionally bypassed by the explicit Cargo-installed `anchor` binary. This does not block builds or tests.

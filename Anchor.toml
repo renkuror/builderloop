@@ -1,0 +1,18 @@
+[toolchain]
+anchor_version = "0.32.1"
+package_manager = "pnpm"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+builderloop = "3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2"
+cohort_build = "BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF"
+
+[provider]
+cluster = "Localnet"
+wallet = "/tmp/builderloop-local-authority.json"
+
+[scripts]
+test = "pnpm anchor:test"

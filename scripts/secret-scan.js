@@ -23,11 +23,17 @@ for (const file of walk(["."])) {
 
 function* walk(paths) {
   for (const path of paths) {
-    if (path.includes("node_modules") || path.includes(".git") || path.includes("dist")) continue;
+    if (
+      path.includes("node_modules") ||
+      path.includes(".git") ||
+      path.includes(".anchor") ||
+      path.includes("target") ||
+      path.includes("dist")
+    ) continue;
     const stat = statSync(path);
     if (stat.isDirectory()) {
       for (const child of readdirSync(path)) yield* walk([join(path, child)]);
-    } else if (stat.size < 1_000_000) {
+    } else if (stat.isFile() && stat.size < 1_000_000) {
       yield path;
     }
   }

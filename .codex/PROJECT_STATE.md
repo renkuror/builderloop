@@ -40,3 +40,11 @@ The previous JavaScript implementation is a behavioral simulation only. No Ancho
 1. Complete and test WP1 deterministic Rust/TypeScript vectors.
 2. Implement and adversarially test the campaign/module/ship/reward protocol core.
 3. Retry local Anchor/Solana installation only through a materially different documented route after a Windows restart; until then, preserve exact local-validator commands and do not claim those tests ran.
+
+## WSL continuation
+
+- Toolchain blocker resolved: Anchor CLI 0.32.1, Agave/Solana/validator 4.1.1, Rust 1.97.1, Node 24.16.0, pnpm 11.9.0.
+- Real programs: `programs/builderloop` and `programs/cohort-build`; both pass `anchor build`.
+- Real local integration: `tests/anchor/localnet.test.js`; `anchor test --skip-build` passes the current cross-program flow.
+- Current: expand adversarial coverage and wire the frontend/CLI to the generated IDLs and local accounts.
+- Required checks: `cargo fmt --check`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test --workspace`; `anchor build`; `anchor test --skip-build`; `pnpm run ci`; `pnpm secrets`.
