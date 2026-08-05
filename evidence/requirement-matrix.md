@@ -1,19 +1,14 @@
 # BuilderLoop Requirement-to-Evidence Matrix
 
-This matrix records only commands that executed in this local recovery run. Anchor and local-validator results are not substituted with model-test results.
+Only locally executed evidence is listed. Devnet evidence was not produced.
 
-| Requirement | Production file/function | Test ID | Test command | Result | Commit |
-|---|---|---|---|---|---|
-| Frozen binary campaign configuration serialization | `crates/protocol-core/src/lib.rs::config_bytes`, `src/protocol.js::configBytes` | A01/A03 | `cargo test -p builderloop-protocol-core`; `node --test test/wire-vectors.test.js` | PASS | pending WP1 checkpoint |
-| Deterministic config hash | `config_hash`, `configHash` | A01/A02 | same | PASS | pending WP1 checkpoint |
-| Project commitment layout | `project_id`, `projectId` | A04 | same | PASS | pending WP1 checkpoint |
-| Fixed Module attestation layout | `attestation_bytes`, `attestationBytes` | A05 | same | PASS | pending WP1 checkpoint |
-| Period/reward arithmetic boundary rejection | `period_for`, `required_reward_inventory` | A06-A09 | `cargo test -p builderloop-protocol-core`; `node --test test/wire-vectors.test.js` | PASS | pending WP1 checkpoint |
-| Anchor/local-validator execution | not yet available | H01/H03 | `anchor build`, Anchor integration suite | BLOCKED: Solana/Anchor unavailable | — |
-| Campaign authority, pause/resume, verifier deactivation, and finalization | `src/protocol.js::{pauseActions,resumeActions,deactivateVerifier,finalizeCampaign}` | B05-B09 | `node --test test/campaign-adversarial.test.js` | PASS | pending WP2 checkpoint |
-| Wallet signer and campaign binding | `src/protocol.js::{initUser,requireUserCampaignBinding}` | C01/C02/C05 | `node --test test/campaign-adversarial.test.js` | PASS | pending WP2 checkpoint |
-| Module pending/cancel/finalize lifecycle and replay retention | `src/protocol.js::{CampaignLedger,submitModule,cancelPendingModule,finalizeModule}` | D01-D07/D13 | `node --test test/module-adversarial.test.js` | PASS (local protocol core) | working tree — WP3 incomplete |
-| Frozen Module domain fields | `src/protocol.js::submitModule` | D08/D11/D14 | `node --test test/module-adversarial.test.js` | PASS (local protocol core) | working tree — WP3 incomplete |
-| Ed25519 instruction offsets and substituted signatures | Anchor instruction sysvar handler (absent) | D15/D16 | Anchor integration suite | BLOCKED: Anchor/Solana unavailable and no handler exists | — |
-| Campaign authority, pause/resume, verifier deactivation, and finalization | `src/protocol.js::{pauseActions,resumeActions,deactivateVerifier,finalizeCampaign}` | B05-B09 | `node --test test/campaign-adversarial.test.js` | PASS | pending WP2 checkpoint |
-| Wallet signer and campaign binding | `src/protocol.js::{initUser,requireUserCampaignBinding}` | C01/C02/C05 | `node --test test/campaign-adversarial.test.js` | PASS | pending WP2 checkpoint |
+| Requirement | Implementation | Executed evidence | Result |
+|---|---|---|---|
+| Deterministic config/project/attestation bytes | `crates/protocol-core`, `src/protocol.js`, BuilderLoop hash/message helpers | `cargo test --workspace`; `pnpm test` | PASS |
+| Frozen campaign and ordered UserProgress | `programs/builderloop` campaign/user instructions | local-validator integration plus model adversarial tests | PASS |
+| Exact Ed25519 sysvar inspection and pending receipt | `submit_module_attestation`, `inspect_ed25519`, ModuleReceipt PDA | valid, malformed-offset, substituted-message, wrong-verifier, early-finalize cases in `anchor test --skip-build` | PASS |
+| Wallet/project-bound native CPI | `programs/cohort-build::complete_build`, `record_native_ship` | real signed CPI, Completion validation, duplicate rollback in `anchor test --skip-build` | PASS |
+| Pre-funded fixed SPL payout | Reward/Claim/vault instructions | underfunded activation, stage/recipient/pause, exact transfer, duplicate claim, early/late withdrawal and close cases | PASS |
+| Three wallet-connected screens | `web/index.html`, `web/app.js` | `pnpm run ci` production bundle and smoke assertions | PASS |
+| Issuer/reward CLI | `cli/builderloop.js` | vector commands covered by Node tests; on-chain commands use generated IDL/localnet provider | IMPLEMENTED; manual operator surface |
+| Secrets and truthful claims | `.gitignore`, secret scanner, README/docs | `pnpm secrets`; documentation review | PASS |

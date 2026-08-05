@@ -16,3 +16,13 @@ wallet = "/tmp/builderloop-local-authority.json"
 
 [scripts]
 test = "pnpm anchor:test"
+
+[[test.genesis]]
+address = "3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2"
+program = "target/deploy/builderloop.so"
+upgradeable = false
+
+[[test.genesis]]
+address = "BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF"
+program = "target/deploy/cohort_build.so"
+upgradeable = false

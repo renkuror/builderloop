@@ -26,6 +26,6 @@ writeFileSync("evidence/canonicalization-vectors.json", JSON.stringify({
   projectId: module.projectId,
   attestationHash: attestationHash(module)
 }, null, 2) + "\n");
-writeFileSync("evidence/devnet-addresses.json", JSON.stringify({ status: "blocked", reason: "Solana CLI and Anchor CLI are not installed in the current environment." }, null, 2) + "\n");
-writeFileSync("evidence/transaction-links.json", JSON.stringify({ status: "blocked", reason: "No Devnet deployment or transactions were performed." }, null, 2) + "\n");
-writeFileSync("evidence/test-summary.md", "# Test Summary\n\nLocal Node protocol tests are authoritative for this MVP model. Devnet evidence is explicitly pending.\n");
+writeFileSync("evidence/devnet-addresses.json", JSON.stringify({ status: "not-produced", reason: "Devnet is explicitly excluded; localnet only." }, null, 2) + "\n");
+writeFileSync("evidence/transaction-links.json", JSON.stringify({ status: "not-produced", reason: "No Devnet transactions were performed; ephemeral local signatures are not durable explorer evidence." }, null, 2) + "\n");
+writeFileSync("evidence/test-summary.md", "# Test Summary\n\n`anchor build` and `anchor test --skip-build` pass for both real programs and their local-validator CPI/SPL flow. `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and `pnpm run ci` pass. Evidence is local/test-only; Devnet is excluded.\n");

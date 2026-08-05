@@ -6,7 +6,7 @@ export const keys = Object.freeze({
   rewardAuthority: "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
   sourceProgram: "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
   sourceAuthority: "LbUiWL3xVV8hTFYBVdbTNrpDo41NKS6o3LHHuDzjfcY",
-  program: "QWmroo4YnnMqYW3cnxWkFdaTxGD3P7vMSzwMHGbUzwF",
+  program: "3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2",
   user: "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
   mint: "YMN9Qj5jPNp7j14VPcML1B6xGgcPWVZUGLFU3Mnyfaf",
   vault: "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN"

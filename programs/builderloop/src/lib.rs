@@ -956,6 +956,11 @@ fn assert_campaign_actionable(c: &CampaignConfig) -> Result<()> {
         BuilderLoopError::InvalidCampaignStatus
     );
     require!(!c.actions_paused, BuilderLoopError::ActionsPaused);
+    let now = Clock::get()?.unix_timestamp;
+    require!(
+        now >= c.start_ts && now < c.end_ts,
+        BuilderLoopError::OutsideCampaignWindow
+    );
     Ok(())
 }
 fn period_for(c: &CampaignConfig, now: i64) -> Result<u8> {

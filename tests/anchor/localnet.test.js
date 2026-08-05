@@ -63,6 +63,8 @@ test("local validator enforces Module, native CPI, and fixed SPL reward lifecycl
   assert.notDeepEqual(Buffer.from(frozen.configHash), Buffer.alloc(32));
   await builder.methods.startCampaign().accounts({ authority, campaign }).rpc();
   await builder.methods.initUser().accounts({ wallet: user.publicKey, campaign, userProgress: progress, systemProgram: SystemProgram.programId }).signers([user]).rpc();
+  const [attackerProgress] = PublicKey.findProgramAddressSync([Buffer.from("user"), campaign.toBuffer(), attacker.publicKey.toBuffer()], BUILDERLOOP);
+  await builder.methods.initUser().accounts({ wallet: attacker.publicKey, campaign, userProgress: attackerProgress, systemProgram: SystemProgram.programId }).signers([attacker]).rpc();
 
   const seedHash = sha(Buffer.from("local-project-seed"));
   const projectId = sha(Buffer.from("BUILDERLOOP_PROJECT_V1"), BUILDERLOOP.toBuffer(), campaign.toBuffer(), user.publicKey.toBuffer(), seedHash);
@@ -80,6 +82,9 @@ test("local validator enforces Module, native CPI, and fixed SPL reward lifecycl
     wallet: user.publicKey, campaign, userProgress: progress, moduleReceipt: receipt,
     instructions: SYSVAR_INSTRUCTIONS_PUBKEY, systemProgram: SystemProgram.programId,
   }).instruction();
+  await builder.methods.pauseActions().accounts({ authority, campaign }).rpc();
+  await expectFailure(provider.sendAndConfirm(new Transaction().add(ed25519, submit), [user]), "Module while campaign paused");
+  await builder.methods.resumeActions().accounts({ authority, campaign }).rpc();
   const malformed = Ed25519Program.createInstructionWithPrivateKey({ privateKey: verifier.secretKey, message: Buffer.from(message) });
   malformed.data.writeUInt16LE(111, 10);
   await expectFailure(provider.sendAndConfirm(new Transaction().add(malformed, submit), [user]), "malformed Ed25519 offsets");
@@ -119,10 +124,61 @@ test("local validator enforces Module, native CPI, and fixed SPL reward lifecycl
   const [vault] = PublicKey.findProgramAddressSync([Buffer.from("vault"), reward.toBuffer()], BUILDERLOOP);
   const rewardArgs = { rewardId: new anchor.BN(rewardId), amountPerClaim: new anchor.BN(1_000_000), maxClaims: 1, startsAt: new anchor.BN(start), endsAt: new anchor.BN(start + 100) };
   await builder.methods.createReward(rewardArgs).accounts({ rewardAuthority: rewardAuthority.publicKey, campaign, mint, reward, vault, tokenProgram: TOKEN_PROGRAM_ID, systemProgram: SystemProgram.programId }).signers([rewardAuthority]).rpc();
+  await expectFailure(builder.methods.activateReward().accounts({ rewardAuthority: rewardAuthority.publicKey, reward, vault }).signers([rewardAuthority]).rpc(), "activation without funding");
   await builder.methods.fundReward(new anchor.BN(1_000_000)).accounts({ rewardAuthority: rewardAuthority.publicKey, reward, mint, source, vault, tokenProgram: TOKEN_PROGRAM_ID }).signers([rewardAuthority]).rpc();
   await builder.methods.activateReward().accounts({ rewardAuthority: rewardAuthority.publicKey, reward, vault }).signers([rewardAuthority]).rpc();
   const [claim] = PublicKey.findProgramAddressSync([Buffer.from("claim"), reward.toBuffer(), user.publicKey.toBuffer()], BUILDERLOOP);
+  const [attackerClaim] = PublicKey.findProgramAddressSync([Buffer.from("claim"), reward.toBuffer(), attacker.publicKey.toBuffer()], BUILDERLOOP);
+  const attackerRecipient = await createAccount(provider.connection, attacker, mint, attacker.publicKey);
+  await expectFailure(builder.methods.claimReward().accounts({ wallet: attacker.publicKey, campaign, userProgress: attackerProgress, reward, mint, vault, recipient: attackerRecipient, claim: attackerClaim, tokenProgram: TOKEN_PROGRAM_ID, systemProgram: SystemProgram.programId }).signers([attacker]).rpc(), "claim before Shipped");
+  await expectFailure(builder.methods.claimReward().accounts({ wallet: user.publicKey, campaign, userProgress: progress, reward, mint, vault, recipient: source, claim, tokenProgram: TOKEN_PROGRAM_ID, systemProgram: SystemProgram.programId }).signers([user]).rpc(), "recipient owned by another wallet");
+  await builder.methods.pauseReward().accounts({ rewardAuthority: rewardAuthority.publicKey, reward, vault }).signers([rewardAuthority]).rpc();
+  await expectFailure(builder.methods.claimReward().accounts({ wallet: user.publicKey, campaign, userProgress: progress, reward, mint, vault, recipient, claim, tokenProgram: TOKEN_PROGRAM_ID, systemProgram: SystemProgram.programId }).signers([user]).rpc(), "claim while paused");
+  await builder.methods.resumeReward().accounts({ rewardAuthority: rewardAuthority.publicKey, reward, vault }).signers([rewardAuthority]).rpc();
   await builder.methods.claimReward().accounts({ wallet: user.publicKey, campaign, userProgress: progress, reward, mint, vault, recipient, claim, tokenProgram: TOKEN_PROGRAM_ID, systemProgram: SystemProgram.programId }).signers([user]).rpc();
   assert.equal((await getAccount(provider.connection, recipient)).amount, 1_000_000n);
   await expectFailure(builder.methods.claimReward().accounts({ wallet: user.publicKey, campaign, userProgress: progress, reward, mint, vault, recipient, claim, tokenProgram: TOKEN_PROGRAM_ID, systemProgram: SystemProgram.programId }).signers([user]).rpc(), "duplicate claim");
+
+  const closingRewardId = 4;
+  const [closingReward] = PublicKey.findProgramAddressSync([Buffer.from("reward"), campaign.toBuffer(), rewardAuthority.publicKey.toBuffer(), ule64(closingRewardId)], BUILDERLOOP);
+  const [closingVault] = PublicKey.findProgramAddressSync([Buffer.from("vault"), closingReward.toBuffer()], BUILDERLOOP);
+  const closingEnds = Math.floor(Date.now() / 1000) + 3;
+  await builder.methods.createReward({ rewardId: new anchor.BN(closingRewardId), amountPerClaim: new anchor.BN(500_000), maxClaims: 2, startsAt: new anchor.BN(start), endsAt: new anchor.BN(closingEnds) }).accounts({ rewardAuthority: rewardAuthority.publicKey, campaign, mint, reward: closingReward, vault: closingVault, tokenProgram: TOKEN_PROGRAM_ID, systemProgram: SystemProgram.programId }).signers([rewardAuthority]).rpc();
+  await builder.methods.fundReward(new anchor.BN(1_000_000)).accounts({ rewardAuthority: rewardAuthority.publicKey, reward: closingReward, mint, source, vault: closingVault, tokenProgram: TOKEN_PROGRAM_ID }).signers([rewardAuthority]).rpc();
+  await builder.methods.activateReward().accounts({ rewardAuthority: rewardAuthority.publicKey, reward: closingReward, vault: closingVault }).signers([rewardAuthority]).rpc();
+  await expectFailure(builder.methods.withdrawRemainingInventory().accounts({ rewardAuthority: rewardAuthority.publicKey, reward: closingReward, mint, vault: closingVault, destination: source, tokenProgram: TOKEN_PROGRAM_ID }).signers([rewardAuthority]).rpc(), "early remainder withdrawal");
+  await sleep(4000);
+  await builder.methods.withdrawRemainingInventory().accounts({ rewardAuthority: rewardAuthority.publicKey, reward: closingReward, mint, vault: closingVault, destination: source, tokenProgram: TOKEN_PROGRAM_ID }).signers([rewardAuthority]).rpc();
+  await builder.methods.closeReward().accounts({ rewardAuthority: rewardAuthority.publicKey, reward: closingReward, vault: closingVault, tokenProgram: TOKEN_PROGRAM_ID }).signers([rewardAuthority]).rpc();
+  assert.equal(await provider.connection.getAccountInfo(closingReward), null);
+  assert.equal(await provider.connection.getAccountInfo(closingVault), null);
+
+  const campaign2Id = 8;
+  const [campaign2] = PublicKey.findProgramAddressSync([Buffer.from("campaign"), authority.toBuffer(), ule64(campaign2Id)], BUILDERLOOP);
+  await builder.methods.createCampaign({ ...args, campaignId: new anchor.BN(campaign2Id) }).accounts({ authority, campaign: campaign2, systemProgram: SystemProgram.programId }).rpc();
+  await builder.methods.freezeCampaign().accounts({ authority, campaign: campaign2 }).rpc();
+  await builder.methods.startCampaign().accounts({ authority, campaign: campaign2 }).rpc();
+  const [progress2] = PublicKey.findProgramAddressSync([Buffer.from("user"), campaign2.toBuffer(), attacker.publicKey.toBuffer()], BUILDERLOOP);
+  await builder.methods.initUser().accounts({ wallet: attacker.publicKey, campaign: campaign2, userProgress: progress2, systemProgram: SystemProgram.programId }).signers([attacker]).rpc();
+
+  const submitFor = async (label) => {
+    const event = sha(Buffer.from(label));
+    const seed = sha(Buffer.from(`${label}:seed`));
+    const project = sha(Buffer.from("BUILDERLOOP_PROJECT_V1"), BUILDERLOOP.toBuffer(), campaign2.toBuffer(), attacker.publicKey.toBuffer(), seed);
+    const expiry = start + 100;
+    const value = { verifierEpoch: 0, eventIdHash: [...event], projectId: [...project], projectSeedHash: [...seed], metadataHash: [...metadataHash], expiresAt: new anchor.BN(expiry) };
+    const bytes = Buffer.concat([Buffer.from("BUILDERLOOP_MODULE_V1"), BUILDERLOOP.toBuffer(), campaign2.toBuffer(), attacker.publicKey.toBuffer(), le32(0), event, project, seed, metadataHash, le64(expiry)]);
+    const signatureInstruction = Ed25519Program.createInstructionWithPrivateKey({ privateKey: verifier.secretKey, message: bytes });
+    const [moduleReceipt] = PublicKey.findProgramAddressSync([Buffer.from("module"), campaign2.toBuffer(), event], BUILDERLOOP);
+    const moduleInstruction = await builder.methods.submitModuleAttestation(value).accounts({ wallet: attacker.publicKey, campaign: campaign2, userProgress: progress2, moduleReceipt, instructions: SYSVAR_INSTRUCTIONS_PUBKEY, systemProgram: SystemProgram.programId }).instruction();
+    await provider.sendAndConfirm(new Transaction().add(signatureInstruction, moduleInstruction), [attacker]);
+    return { moduleReceipt, signatureInstruction, moduleInstruction };
+  };
+  const cancelled = await submitFor("cancelled-event");
+  await builder.methods.cancelPendingModule().accounts({ wallet: attacker.publicKey, campaign: campaign2, userProgress: progress2, moduleReceipt: cancelled.moduleReceipt }).signers([attacker]).rpc();
+  await expectFailure(provider.sendAndConfirm(new Transaction().add(cancelled.signatureInstruction, cancelled.moduleInstruction), [attacker]), "canonical event replay after cancellation");
+  const stale = await submitFor("stale-event");
+  await builder.methods.deactivateVerifier().accounts({ authority, campaign: campaign2 }).rpc();
+  await sleep(1200);
+  await expectFailure(builder.methods.finalizeModule().accounts({ wallet: attacker.publicKey, campaign: campaign2, userProgress: progress2, moduleReceipt: stale.moduleReceipt }).signers([attacker]).rpc(), "stale receipt after verifier epoch change");
 });

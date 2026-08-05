@@ -1,14 +1,11 @@
 # BuilderLoop Blockers
 
-## 2026-08-05
+## Current
 
-- WSL platform installation completed but requires a Windows restart before a Linux distribution can be installed.
-- `wsl --list --online` could not reach the Microsoft distribution catalog in this session (`Wsl/WININET_E_CANNOT_CONNECT`).
-- Solana CLI and Anchor CLI remain unavailable until WSL is operational and their official installer runs.
-- `npm.ps1` is blocked by PowerShell execution policy; use `pnpm` or `npm.cmd`.
-- 2026-08-05 recovery: `cargo search anchor-cli --limit 1` proved registry access is available, but `cargo install --version 0.32.1 anchor-cli --locked` did not complete within the 60-second bounded attempt. It was safely terminated. Anchor and Solana local-validator tests are therefore not executable in this Windows session.
+- No blocker remains for localnet scope.
+- Devnet/mainnet deployment and external sponsor/retention evidence are explicitly excluded, not environment blockers.
 
-## Resolved in WSL
+## Historical resolution
 
-- Solana/validator and Anchor are now installed and verified; SBF build and local-validator integration tests execute successfully.
-- AVM 1.1.2 cannot manage the pinned 0.32.1 binary in this sandbox and is intentionally bypassed by the explicit Cargo-installed `anchor` binary. This does not block builds or tests.
+- The former Windows toolchain blocker was resolved in Ubuntu/WSL2. Solana/validator 4.1.1 and Anchor 0.32.1 now build and execute the local integration suite.
+- AVM 1.1.2 is not used to select Anchor; the pinned user-local Cargo-installed `anchor` binary is verified directly.
