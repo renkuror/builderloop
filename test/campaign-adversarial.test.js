@@ -12,13 +12,14 @@ import {
   submitModule
 } from "../src/protocol.js";
 import { campaignFixture, hashFixture, keys } from "../src/fixtures.js";
+import { moduleTestVerifier, signedVoucher } from "../test-support/module-signing.js";
 
 function activeCampaign() {
-  return startCampaign(freezeCampaign(createCampaign(campaignFixture()), keys.authority), keys.authority);
+  return startCampaign(freezeCampaign(createCampaign(campaignFixture({ verifier: moduleTestVerifier })), keys.authority), keys.authority);
 }
 
 function voucher(campaign) {
-  return {
+  return signedVoucher({
     builderloopProgramId: keys.program,
     campaignAuthority: campaign.authority,
     verifier: campaign.verifier,
@@ -32,7 +33,7 @@ function voucher(campaign) {
     projectSeedHash: hashFixture("campaign-adversarial-seed"),
     metadataHash: hashFixture("campaign-adversarial-metadata"),
     expiresAt: 2_000
-  };
+  });
 }
 
 test("campaign authorities exclusively control pause, resume, verifier deactivation, and finalization", () => {
@@ -54,7 +55,7 @@ test("campaign authorities exclusively control pause, resume, verifier deactivat
 
 test("user progress is bound to one frozen campaign and wallet signer", () => {
   const campaign = activeCampaign();
-  const anotherCampaign = startCampaign(freezeCampaign(createCampaign(campaignFixture({ campaignId: 2 })), keys.authority), keys.authority);
+  const anotherCampaign = startCampaign(freezeCampaign(createCampaign(campaignFixture({ campaignId: 2, verifier: moduleTestVerifier })), keys.authority), keys.authority);
   const user = initUser(campaign, keys.user, keys.user);
   assert.throws(() => initUser(campaign, keys.user, keys.authority), /wallet signer/);
   assert.throws(() => submitModule(anotherCampaign, user, voucher(anotherCampaign), 1_010), /campaign binding/);

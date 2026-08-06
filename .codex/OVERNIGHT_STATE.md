@@ -46,3 +46,9 @@ WP3: Module receipt lifecycle and Artifact Lineage hardening.
 
 ## External blockers
 - Solana CLI and Anchor CLI are unavailable. WSL reports `E_ACCESSDENIED` and requires a Windows restart; local Anchor-validator integration cannot execute until a supported toolchain is installed.
+
+## 2026-08-05 continuation checkpoint
+- Baseline verification passed: `pnpm run ci` (15 Node tests) and Rust format/clippy/tests (5 tests).
+- RED checkpoint `6330ece` adds executable reward authority, lifecycle, fixed-amount, and one-claim-per-wallet adversarial coverage.
+- GREEN local-model implementation is ready for checkpointing; it is not evidence of an SPL vault or on-chain PDA.
+- Local Module attestation now verifies Ed25519 payload signatures; the Anchor Ed25519 instruction-sysvar requirement remains blocked on the absent on-chain program/toolchain.

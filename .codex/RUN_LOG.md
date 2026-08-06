@@ -26,3 +26,12 @@
 - Continued inside Ubuntu/WSL2; installed and verified Anchor CLI 0.32.1 alongside Agave/Solana CLI and validator 4.1.1.
 - Added real BuilderLoop and CohortBuild Anchor programs, strict Ed25519 instruction-sysvar parsing, pending/finalized Module receipts, native wallet-bound CPI, SPL vault/Reward/Claim lifecycle, and a real local-validator integration suite.
 - Fixed CPI signer metadata and explicitly serialized Completion before the atomic CPI; local end-to-end test then passed.
+
+## 2026-08-06
+
+- Merged the current `origin/main` Anchor/localnet implementation into `codex/mechanical-manga-frontend` before frontend integration.
+- Rebuilt the static frontend as seven Mechanical Manga routes with fixture-only proof states, optional local-validator wallet wiring, sound/keycap interactions, accessibility safeguards, and original keyboard SVG art.
+- Added Node unit coverage and Playwright route/interaction/mobile checks; captured eleven actual fixture screenshots under `docs/assets/frontend/` and updated the truthful runbook, shotlist, manual QA, and red-team review.
+- Verified `pnpm run ci`, standalone frontend build/tests, Playwright (10 passing), portable `scripts/verify-frontend.sh`, secret scan, and production dependency audit.
+- The Windows host lacked Anchor and blocked Cargo build-script execution with `os error 5`; no native/local-validator command was reported as green from this host.
+- Committed frontend delivery as `5eba2d1`, pushed `codex/mechanical-manga-frontend`, and opened draft PR #3 into `main` without merging.

@@ -3,73 +3,20 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BuilderLoop MVP</title>
-    <link rel="stylesheet" href="./styles.css">
+    <meta name="description" content="BuilderLoop freezes an ordered Module, return gate, Ship, and fixed reward path for Solana cohorts.">
+    <title>BuilderLoop — Ordered Return Rewards</title>
+    <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <header>
-      <h1>BuilderLoop</h1>
-      <nav aria-label="Screens">
-        <a href="#campaign">Campaign</a>
-        <a href="#progress">Progress</a>
-        <a href="#reward">Reward</a>
-      </nav>
-      <div class="connection">
-        <label>RPC <input id="rpcUrl" value="http://127.0.0.1:8899"></label>
-        <button type="button" id="connectButton">Connect wallet</button>
-        <output id="walletOutput">Wallet not connected</output>
-      </div>
-    </header>
-    <main>
-      <section id="campaign">
-        <h2>Campaign</h2>
-        <label>Campaign account <input id="campaignAddress" placeholder="Campaign PDA"></label>
-        <button type="button" id="loadButton">Load on-chain state</button>
-        <output id="loadOutput">Enter the local Campaign PDA.</output>
-        <dl>
-          <dt>Authority</dt><dd id="campaignAuthority">Not loaded</dd>
-          <dt>Reward authority</dt><dd id="rewardAuthority">Not loaded</dd>
-          <dt>Verifier</dt><dd id="verifier">Not loaded</dd>
-          <dt>Source</dt><dd id="sourceProgram">Not loaded</dd>
-          <dt>Status</dt><dd id="campaignStatus">Not loaded</dd>
-          <dt>Window</dt><dd id="campaignWindow">Not loaded</dd>
-          <dt>Gap</dt><dd id="campaignGap">Not loaded</dd>
-          <dt>Privacy</dt><dd>Wallet, project commitment, and artifact hashes are public in local evidence.</dd>
-        </dl>
-        <code id="configHash">config hash not loaded</code>
-      </section>
-      <section id="progress">
-        <h2>Progress</h2>
-        <ol>
-          <li id="moduleGate" data-state="locked">Module not finalized</li>
-          <li id="elapsedGate" data-state="locked">Elapsed-time gate unknown</li>
-          <li id="periodGate" data-state="locked">Period gate unknown</li>
-          <li id="shipGate" data-state="locked">Ship not recorded</li>
-        </ol>
-        <p id="lockReason">Connect a wallet and load a campaign for the exact lock reason.</p>
-        <dl>
-          <dt>Stage</dt><dd id="userStage">No UserProgress account loaded</dd>
-          <dt>Project commitment</dt><dd><code id="projectId">—</code></dd>
-          <dt>Artifact</dt><dd><code id="artifactHash">—</code></dd>
-        </dl>
-      </section>
-      <section id="reward">
-        <h2>Reward</h2>
-        <label>Reward account <input id="rewardAddress" placeholder="Reward PDA"></label>
-        <label>Recipient SPL account <input id="recipientAddress" placeholder="Signer-owned token account"></label>
-        <dl>
-          <dt>Authority</dt><dd id="rewardRole">Not loaded</dd>
-          <dt>Config snapshot</dt><dd><code id="rewardConfigHash">—</code></dd>
-          <dt>Mint</dt><dd id="rewardMint">—</dd>
-          <dt>Amount</dt><dd id="rewardAmount">—</dd>
-          <dt>Inventory</dt><dd id="rewardInventory">—</dd>
-          <dt>Window</dt><dd id="rewardWindow">—</dd>
-          <dt>Status</dt><dd id="rewardStatus">Not loaded. Local test payout only; no independent sponsor claim.</dd>
-        </dl>
-        <button type="button" id="claimButton" disabled>Claim fixed payout</button>
-        <output id="claimOutput">Load eligible on-chain state first.</output>
-      </section>
-    </main>
-    <script type="module" src="./app.js"></script>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div id="app" class="app-shell"></div>
+    <noscript>
+      <main class="technical-panel">
+        <p class="panel-kicker">BUILDERLOOP / LOCALNET</p>
+        <h1>JavaScript is required for the interactive judge demo.</h1>
+        <p>The protocol source, localnet test suite, and reproducible commands remain available in the repository.</p>
+      </main>
+    </noscript>
+    <script type="module" src="/app.js"></script>
   </body>
 </html>

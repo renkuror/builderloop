@@ -8,15 +8,16 @@ import {
   startCampaign
 } from "../src/protocol.js";
 import { campaignFixture, hashFixture, keys } from "../src/fixtures.js";
+import { moduleTestVerifier, signedVoucher } from "../test-support/module-signing.js";
 
 function activeLedger() {
-  const campaign = startCampaign(freezeCampaign(createCampaign(campaignFixture()), keys.authority), keys.authority);
+  const campaign = startCampaign(freezeCampaign(createCampaign(campaignFixture({ verifier: moduleTestVerifier })), keys.authority), keys.authority);
   return new CampaignLedger(campaign);
 }
 
 function voucher(campaign, overrides = {}) {
   const projectSeedHash = hashFixture("module-seed");
-  return {
+  return signedVoucher({
     builderloopProgramId: keys.program,
     campaignAuthority: campaign.authority,
     verifier: campaign.verifier,
@@ -31,7 +32,7 @@ function voucher(campaign, overrides = {}) {
     metadataHash: hashFixture("module-metadata"),
     expiresAt: 2_000,
     ...overrides
-  };
+  });
 }
 
 test("receipt ledger makes canonical events single-use even when a pending receipt is cancelled", () => {

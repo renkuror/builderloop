@@ -1,3 +1,4 @@
+import { createPublicKey, verify } from "node:crypto";
 import { CampaignStatus, DOMAINS, ReceiptStatus, RewardStatus, UserStage } from "./constants.js";
 import { assertHash, assertPubkey, publicKeyBytes, sha256Hex } from "./crypto.js";
 
@@ -75,6 +76,18 @@ export function projectId({ programId, campaign, user, projectSeedHash }) {
   ]));
 }
 
+/** Deterministic local analogue of CohortBuild's completion PDA seed layout. */
+export function completionPda(campaign, user) {
+  assertPubkey(campaign.sourceProgram, "sourceProgram");
+  assertPubkey(user, "user");
+  return sha256Hex(Buffer.concat([
+    Buffer.from(DOMAINS.COMPLETION),
+    Buffer.from(publicKeyBytes(campaign.sourceProgram)),
+    encodeU64(campaign.challengeId, "challengeId"),
+    Buffer.from(publicKeyBytes(user))
+  ]));
+}
+
 export function attestationBytes(payload) {
   const required = [
     "builderloopProgramId",
@@ -115,6 +128,35 @@ export function attestationBytes(payload) {
 
 export function attestationHash(payload) {
   return sha256Hex(attestationBytes(payload));
+}
+
+/**
+ * Verifies the fixed Ed25519 payload against the frozen verifier identity.
+ * Anchor must additionally inspect the Ed25519 instruction sysvar before this
+ * model's equivalent check can be considered on-chain evidence.
+ */
+export function verifyModuleAttestation(voucher, verifier) {
+  if (voucher.verifier !== verifier) return false;
+  if (typeof voucher.signature !== "string") return false;
+  const key = createPublicKey({
+    key: Buffer.concat([
+      Buffer.from("302a300506032b6570032100", "hex"),
+      Buffer.from(publicKeyBytes(verifier))
+    ]),
+    format: "der",
+    type: "spki"
+  });
+  return verify(null, attestationBytes({
+    builderloopProgramId: voucher.builderloopProgramId,
+    campaign: voucher.campaignAuthority,
+    user: voucher.user,
+    verifierEpoch: voucher.verifierEpoch,
+    eventIdHash: voucher.eventIdHash,
+    projectId: voucher.projectId,
+    projectSeedHash: voucher.projectSeedHash,
+    metadataHash: voucher.metadataHash,
+    expiresAt: voucher.expiresAt
+  }), key, Buffer.from(voucher.signature, "base64"));
 }
 
 export function periodFor(config, timestamp) {
@@ -239,6 +281,7 @@ export function submitModule(campaign, user, voucher, now) {
   if (voucher.verifierEpoch !== campaign.verifierEpoch) throw new Error("stale verifier epoch");
   if (voucher.user !== user.wallet) throw new Error("voucher user mismatch");
   if (voucher.campaignConfigHash !== campaign.configHash) throw new Error("voucher campaign mismatch");
+  if (!verifyModuleAttestation(voucher, campaign.verifier)) throw new Error("invalid Module Ed25519 signature");
   if (voucher.expiresAt < now) throw new Error("voucher expired");
   assertHash(voucher.eventIdHash, "eventIdHash");
   assertHash(voucher.projectId, "projectId");
@@ -360,6 +403,8 @@ export function recordNativeShip(campaign, user, completion, signer, now) {
   if (user.stage !== UserStage.ModuleFinalized) throw new Error("module must be finalized before Ship");
   if (completion.owner !== campaign.sourceProgram) throw new Error("wrong source owner/program");
   if (completion.authority !== campaign.sourceAuthority) throw new Error("wrong source authority");
+  if (completion.discriminator !== DOMAINS.COMPLETION) throw new Error("wrong Completion discriminator");
+  if (completion.pda !== completionPda(campaign, user.wallet)) throw new Error("wrong Completion PDA");
   if (completion.challengeId !== campaign.challengeId) throw new Error("wrong challenge");
   if (completion.user !== user.wallet) throw new Error("same wallet required");
   if (completion.projectId !== user.projectId) throw new Error("same project required");
@@ -371,26 +416,47 @@ export function recordNativeShip(campaign, user, completion, signer, now) {
   return { ...user, stage: UserStage.Shipped, artifactHash: completion.artifactHash, shipCompletedAt: now, shipPeriod };
 }
 
-export function createReward(campaign, reward) {
+export function createReward(campaign, reward, signer) {
   if (campaign.status !== CampaignStatus.Frozen && campaign.status !== CampaignStatus.Active) throw new Error("campaign must be frozen");
+  if (!campaign.configHash) throw new Error("campaign must snapshot config hash");
   if (reward.rewardAuthority !== campaign.rewardAuthority) throw new Error("wrong reward authority");
+  requireRewardAuthority(reward, signer);
   assertPubkey(reward.mint, "mint");
   assertPubkey(reward.vault, "vault");
   if (!Number.isSafeInteger(reward.amountPerClaim) || reward.amountPerClaim <= 0) throw new Error("invalid claim amount");
   if (!Number.isInteger(reward.maxClaims) || reward.maxClaims <= 0) throw new Error("invalid capacity");
+  if (!Number.isSafeInteger(reward.startsAt) || !Number.isSafeInteger(reward.endsAt) || reward.startsAt >= reward.endsAt) {
+    throw new Error("invalid reward window");
+  }
+  const requiredFunding = reward.amountPerClaim * reward.maxClaims;
+  if (!Number.isSafeInteger(requiredFunding)) throw new Error("reward capacity overflow");
   return { ...reward, configHash: campaign.configHash, claimedCount: 0, fundedAmount: 0, status: RewardStatus.Draft };
 }
 
-export function fundReward(reward, amount) {
+export function fundReward(reward, amount, signer) {
   if (reward.status !== RewardStatus.Draft) throw new Error("reward must be Draft");
+  requireRewardAuthority(reward, signer);
   const required = reward.amountPerClaim * reward.maxClaims;
-  if (!Number.isSafeInteger(required) || amount < required) throw new Error("insufficient funding");
+  if (!Number.isSafeInteger(required) || !Number.isSafeInteger(amount) || amount < required) throw new Error("insufficient funding");
   return { ...reward, fundedAmount: amount, status: RewardStatus.Funded };
 }
 
-export function activateReward(reward, now) {
+export function activateReward(reward, now, signer) {
   if (reward.status !== RewardStatus.Funded) throw new Error("reward must be Funded");
-  if (now > reward.endsAt) throw new Error("reward window ended");
+  requireRewardAuthority(reward, signer);
+  if (!Number.isSafeInteger(now) || now < reward.startsAt || now > reward.endsAt) throw new Error("reward outside activation window");
+  return { ...reward, status: RewardStatus.Active };
+}
+
+export function pauseReward(reward, signer) {
+  if (reward.status !== RewardStatus.Active) throw new Error("reward must be Active");
+  requireRewardAuthority(reward, signer);
+  return { ...reward, status: RewardStatus.Paused };
+}
+
+export function resumeReward(reward, signer) {
+  if (reward.status !== RewardStatus.Paused) throw new Error("reward must be Paused");
+  requireRewardAuthority(reward, signer);
   return { ...reward, status: RewardStatus.Active };
 }
 
@@ -403,10 +469,58 @@ export function claimReward(campaign, reward, user, recipient, signer, now) {
   if (now < reward.startsAt || now > reward.endsAt) throw new Error("claim outside window");
   if (recipient.owner !== signer || recipient.mint !== reward.mint) throw new Error("recipient token account mismatch");
   if (reward.claimedCount >= reward.maxClaims) throw new Error("inventory exhausted");
+  if (reward.fundedAmount < reward.amountPerClaim) throw new Error("vault inventory exhausted");
   return [
     { ...reward, claimedCount: reward.claimedCount + 1, fundedAmount: reward.fundedAmount - reward.amountPerClaim },
     { rewardId: reward.rewardId, user: signer, amount: reward.amountPerClaim, claimedAt: now }
   ];
+}
+
+export function withdrawRemainingInventory(reward, signer, recipient, now) {
+  requireRewardAuthority(reward, signer);
+  if (![RewardStatus.Active, RewardStatus.Paused, RewardStatus.Funded].includes(reward.status)) throw new Error("reward must be terminally withdrawable");
+  if (!Number.isSafeInteger(now) || now <= reward.endsAt) throw new Error("reward deadline has not elapsed");
+  if (recipient.owner !== signer || recipient.mint !== reward.mint) throw new Error("withdraw recipient token account mismatch");
+  return [
+    { ...reward, fundedAmount: 0, status: RewardStatus.Ended },
+    { rewardId: reward.rewardId, amount: reward.fundedAmount, withdrawnAt: now }
+  ];
+}
+
+export function closeReward(reward, signer) {
+  requireRewardAuthority(reward, signer);
+  if (reward.status !== RewardStatus.Ended) throw new Error("reward must be Ended");
+  if (reward.fundedAmount !== 0) throw new Error("reward vault must be empty");
+  return { ...reward, status: RewardStatus.Closed };
+}
+
+/**
+ * Local deterministic account store for Claim PDA uniqueness. The production
+ * program must enforce the same one-claim-per-reward-wallet invariant by PDA.
+ */
+export class RewardLedger {
+  constructor(reward) {
+    this.reward = reward;
+    this.claims = new Map();
+  }
+
+  claim(campaign, user, recipient, signer, now) {
+    if (this.claims.has(signer)) throw new Error("Claim PDA already exists");
+    const [nextReward, claim] = claimReward(campaign, this.reward, user, recipient, signer, now);
+    this.reward = nextReward;
+    this.claims.set(signer, claim);
+    return claim;
+  }
+
+  pause(signer) {
+    this.reward = pauseReward(this.reward, signer);
+    return this.reward;
+  }
+
+  resume(signer) {
+    this.reward = resumeReward(this.reward, signer);
+    return this.reward;
+  }
 }
 
 function requireAuthority(campaign, signer) {
@@ -421,4 +535,8 @@ function requireCampaignActive(campaign) {
 
 function requireUserCampaignBinding(campaign, user) {
   if (user.campaignHash !== campaign.configHash) throw new Error("user campaign binding mismatch");
+}
+
+function requireRewardAuthority(reward, signer) {
+  if (signer !== reward.rewardAuthority) throw new Error("wrong reward authority");
 }

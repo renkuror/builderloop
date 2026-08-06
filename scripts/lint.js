@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 let failed = false;
-for (const file of walk(["src", "test"])) {
+for (const file of walk(["src", "test", "test-support"])) {
   const text = readFileSync(file, "utf8");
   if (/\b(eval|Function)\s*\(/.test(text)) fail(file, "dynamic code execution is forbidden");
   if (/\bTODO\b/.test(text)) fail(file, "TODO markers must be resolved or tracked in .codex/BLOCKERS.md");

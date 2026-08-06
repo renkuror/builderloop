@@ -106,3 +106,10 @@ pnpm secrets
 - Completion serialization before CPI and source-authority signer metadata.
 - Completion owner/discriminator/exact length/PDA/bump and frozen field comparisons.
 - Reward signer seeds, classic token-program restriction, recipient constraints, and Reward/vault close destinations.
+
+## 2026-08-06 frontend evidence update
+
+- Added the Mechanical Manga judge frontend across seven direct routes, deterministic fixture states, an optional local-validator wallet path, and 11 actual fixture screenshots under `docs/assets/frontend/`.
+- Green in this Windows host: `pnpm run ci` (27 Node tests), `pnpm frontend:build`, `pnpm playwright test` (10 browser tests), `sh scripts/verify-frontend.sh`, `pnpm secrets`, `pnpm audit --prod`, and `cargo fmt --check`.
+- Current Windows toolchain limitation: `anchor` is not installed; Cargo custom build scripts fail to execute with `os error 5`; and no local validator/provider is configured. These current-host failures do not replace the historical localnet evidence above and are not reported as green.
+- The frontend never claims Devnet, public transaction links, wallet settlement, sponsor activity, or a recorded video. See `FRONTEND_COMPLETION_REPORT.md` for the current frontend handoff.

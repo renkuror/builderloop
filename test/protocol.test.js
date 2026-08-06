@@ -6,6 +6,7 @@ import {
   configHash,
   createCampaign,
   createReward,
+  completionPda,
   finalizeModule,
   freezeCampaign,
   fundReward,
@@ -17,14 +18,15 @@ import {
   submitModule
 } from "../src/protocol.js";
 import { campaignFixture, hashFixture, keys } from "../src/fixtures.js";
+import { moduleTestVerifier, signedVoucher } from "../test-support/module-signing.js";
 
 function activeCampaign() {
-  return startCampaign(freezeCampaign(createCampaign(campaignFixture()), keys.authority), keys.authority);
+  return startCampaign(freezeCampaign(createCampaign(campaignFixture({ verifier: moduleTestVerifier })), keys.authority), keys.authority);
 }
 
 function voucher(campaign, overrides = {}) {
   const seed = hashFixture("project-seed");
-  return {
+  return signedVoucher({
     builderloopProgramId: keys.program,
     campaignAuthority: campaign.authority,
     verifier: campaign.verifier,
@@ -39,7 +41,7 @@ function voucher(campaign, overrides = {}) {
     metadataHash: hashFixture("metadata"),
     expiresAt: 10_000,
     ...overrides
-  };
+  });
 }
 
 function finalizedUser() {
@@ -102,6 +104,8 @@ test("native Ship enforces wallet, source, challenge, project, elapsed, and peri
   const completion = {
     owner: keys.sourceProgram,
     authority: keys.sourceAuthority,
+    discriminator: "COHORTBUILD_COMPLETION_V1",
+    pda: completionPda(campaign, keys.user),
     challengeId: campaign.challengeId,
     user: keys.user,
     projectId: user.projectId,
@@ -121,6 +125,8 @@ test("reward lifecycle fixes amount, recipient, inventory, and duplicate claim s
   const shipped = recordNativeShip(campaign, user, {
     owner: keys.sourceProgram,
     authority: keys.sourceAuthority,
+    discriminator: "COHORTBUILD_COMPLETION_V1",
+    pda: completionPda(campaign, keys.user),
     challengeId: campaign.challengeId,
     user: keys.user,
     projectId: user.projectId,
@@ -136,9 +142,9 @@ test("reward lifecycle fixes amount, recipient, inventory, and duplicate claim s
     maxClaims: 1,
     startsAt: 1_000,
     endsAt: 2_000
-  });
-  assert.throws(() => activateReward(reward, 1_100), /Funded/);
-  const active = activateReward(fundReward(reward, 100), 1_100);
+  }, keys.rewardAuthority);
+  assert.throws(() => activateReward(reward, 1_100, keys.rewardAuthority), /Funded/);
+  const active = activateReward(fundReward(reward, 100, keys.rewardAuthority), 1_100, keys.rewardAuthority);
   assert.throws(() => claimReward(campaign, active, shipped, { owner: keys.authority, mint: keys.mint }, keys.user, 1_180), /recipient/);
   const [afterClaim, claim] = claimReward(campaign, active, shipped, { owner: keys.user, mint: keys.mint }, keys.user, 1_180);
   assert.equal(claim.amount, 100);
