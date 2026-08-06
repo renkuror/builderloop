@@ -30,13 +30,25 @@ The pre-existing JavaScript model remains only a parity/reference layer. Complet
 - `anchor build`
 - `anchor test --skip-build`
 - `pnpm run ci`
+- `pnpm ci` (frozen dependency install)
+- `pnpm frontend:build`
+- `pnpm test`
+- `pnpm playwright test`
+- `sh scripts/verify-frontend.sh`
 - `pnpm evidence`
 - `pnpm secrets`
 
 ## Current / next
 
-- Current: final release report, checklist reconciliation, clean checkpoint, push, and PR update.
+- Current: mechanical-manga frontend checkpoint, push, and PR update.
 - Devnet/mainnet: explicitly excluded, not pending.
+
+## 2026-08-06 Frontend checkpoint
+
+- Implemented seven static frontend routes, deterministic fixture states, an optional local-validator client path, original keyboard line art, and responsive Mechanical Manga styling.
+- Captured eleven truthful fixture screenshots under `docs/assets/frontend/`; no video, Devnet deployment, or live wallet outcome is claimed.
+- Green: `pnpm run ci` (27 tests), `pnpm frontend:build`, `pnpm test` (27 tests), `pnpm playwright test` (10 tests), `sh scripts/verify-frontend.sh`, `pnpm secrets`, and `pnpm audit --prod`.
+- This Windows host has no `anchor` executable. `cargo fmt --check` passes, but Cargo custom build scripts fail with Windows `os error 5` even in an isolated temporary target; the Anchor local-validator test also lacks `ANCHOR_PROVIDER_URL`/a running validator. These are recorded as host/toolchain blockers, not green evidence.
 
 ## Key paths
 

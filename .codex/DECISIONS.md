@@ -20,3 +20,10 @@
 - Restrict rewards to the classic SPL Token program so transfer-fee extensions cannot reduce the fixed recipient payout.
 - The CohortBuild source-authority PDA is `[b"builderloop_authority", builderloop_program_id]`; it is marked signer in BuilderLoop CPI metadata and can only sign through CohortBuild `invoke_signed`.
 - Completion is explicitly serialized before CPI because Anchor otherwise writes new account data only at handler exit.
+
+## 2026-08-06: Mechanical Manga frontend evidence
+
+- Keep the public judge path as deterministic, read-only fixtures labeled `DEMO FIXTURE — NOT LIVE`. The wallet path is optional and labeled `LIVE LOCAL VALIDATOR`; no Devnet or public transaction link is synthesized.
+- Treat fixture transitions as illustration only. The genuine local Claim path exposes transaction states through finalized account refetch and verification before it reports success.
+- Use the repository-local `.pnpm-store` so the workspace retains one reproducible pnpm link target. Exclude that generated dependency cache from the secret scanner just as `node_modules` is excluded; source and documentation remain scanned.
+- Playwright uses its normal managed browser when installed. The config can use an already-present local Chromium cache only as a development fallback after an interrupted headless-shell download; it does not change the test behavior or claim production browser evidence.

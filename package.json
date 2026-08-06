@@ -11,6 +11,8 @@
     "test": "node --test test/*.test.js",
     "build": "node scripts/build.js",
     "frontend:build": "node scripts/build-frontend.js",
+    "frontend:serve": "node scripts/serve-frontend.js",
+    "playwright": "playwright",
     "anchor:test": "node --test --test-concurrency=1 tests/anchor/*.test.js",
     "anchor:build": "anchor build",
     "ci": "pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm frontend:build",
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@coral-xyz/anchor": "0.32.1",
+    "@playwright/test": "1.55.0",
     "@solana/spl-token": "0.4.14",
     "@solana/web3.js": "1.98.4",
     "buffer": "6.0.3",

@@ -2,7 +2,8 @@
 
 ## Current
 
-- No blocker remains for localnet scope.
+- No blocker remains for the static frontend, fixture browser checks, or source-level frontend verification.
+- This Windows host cannot complete the native Anchor check set: `anchor` is absent from PATH; Cargo build scripts fail to execute with Windows `os error 5` even from an isolated temporary target; and the local-validator test has no `ANCHOR_PROVIDER_URL`/running validator.
 - Devnet/mainnet deployment and external sponsor/retention evidence are explicitly excluded, not environment blockers.
 
 ## Historical resolution

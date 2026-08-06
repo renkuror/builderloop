@@ -25,6 +25,7 @@ function* walk(paths) {
   for (const path of paths) {
     if (
       path.includes("node_modules") ||
+      path.includes(".pnpm-store") ||
       path.includes(".git") ||
       path.includes(".anchor") ||
       path.includes("target") ||
