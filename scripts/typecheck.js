@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 let failed = false;
-for (const file of walk(["src", "test", "scripts"])) {
+for (const file of walk(["src", "test", "tests", "scripts", "cli", "web"])) {
   const text = readFileSync(file, "utf8");
   for (const match of text.matchAll(/from ["'](\.[^"']+)["']/g)) {
     if (!match[1].endsWith(".js")) fail(file, "relative ESM imports must include .js extension");

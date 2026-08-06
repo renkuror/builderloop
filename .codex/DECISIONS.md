@@ -14,7 +14,9 @@
 - Module vouchers use the fixed-width `BUILDERLOOP_MODULE_V1` layout in `attestation_bytes`; no user-selected namespace/canonicalizer value is serialized into a voucher.
 - The Rust core is dependency-free so byte vectors and overflow rules remain executable before Anchor/Solana installation. It is not evidence that an on-chain program has been deployed or exercised.
 
-## 2026-08-05: Local reward model authorization boundary
+## 2026-08-05: WSL on-chain stack
 
-- The local reward model requires the frozen reward authority for create, fund, activate, pause/resume, deadline withdrawal, and closure. It tracks one claim per reward-wallet in `RewardLedger`.
-- These tests model the production invariants but do not prove SPL Token ownership, PDA derivation, or a deployed vault authority. Those requirements remain blocked on Anchor/Solana local-validator work.
+- Pin Anchor crates and CLI to 0.32.1. Use the installed Agave 4.1.1 CLI/validator after proving both SBF build and local-validator execution work; do not downgrade a green validator stack merely to match Anchor's internal Solana 2.3 crates.
+- Restrict rewards to the classic SPL Token program so transfer-fee extensions cannot reduce the fixed recipient payout.
+- The CohortBuild source-authority PDA is `[b"builderloop_authority", builderloop_program_id]`; it is marked signer in BuilderLoop CPI metadata and can only sign through CohortBuild `invoke_signed`.
+- Completion is explicitly serialized before CPI because Anchor otherwise writes new account data only at handler exit.

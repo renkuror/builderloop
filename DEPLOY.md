@@ -1,9 +1,16 @@
-# Deployment Status
+# Localnet Deployment
 
-## NOT EXECUTED — POST-AUDIT PHASE
+Devnet and mainnet are deliberately excluded. Never change the provider cluster for release evidence.
 
-Devnet deployment is intentionally excluded from this run. No public-network wallet, SOL, RPC configuration, deployment, or transaction was requested or used.
+```sh
+solana --version
+solana-test-validator --version
+anchor --version
+scripts/prepare-localnet.sh
+anchor build
+anchor test --skip-build
+```
 
-The only supported release target for this codebase is a future local-validator test environment after a real Anchor workspace, CohortBuild program, and SPL vault implementation exist. The current JavaScript and dependency-free Rust checks do not constitute deployable Solana programs.
+The suite manages an ephemeral validator and ephemeral `/tmp/builderloop-local-authority.json`. `Anchor.toml` loads the built `.so` files at their fixed IDs through local validator genesis, so the reproducible test command needs no program deployment keypairs. Wallet and program secret keys are never tracked.
 
-Before any post-audit deployment work, a reviewer must verify the Anchor account constraints, Ed25519 instruction-sysvar parsing, CPI source binding, token-program constraints, and close-rent destinations. No network commands are supplied here because the required on-chain implementation does not yet exist.
+For a persistent local demo, start `solana-test-validator --reset`, set `ANCHOR_PROVIDER_URL=http://127.0.0.1:8899` and `ANCHOR_WALLET=/tmp/builderloop-local-authority.json`, deploy with `anchor deploy`, then use the issuer CLI to create/freeze/start the campaign. All resulting addresses and transaction signatures are local-only and must be labeled as such.

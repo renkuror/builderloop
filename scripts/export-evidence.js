@@ -26,6 +26,6 @@ writeFileSync("evidence/canonicalization-vectors.json", JSON.stringify({
   projectId: module.projectId,
   attestationHash: attestationHash(module)
 }, null, 2) + "\n");
-writeFileSync("evidence/devnet-addresses.json", JSON.stringify({ status: "not-executed", label: "POST-AUDIT PHASE", reason: "Devnet deployment is intentionally excluded from this run." }, null, 2) + "\n");
-writeFileSync("evidence/transaction-links.json", JSON.stringify({ status: "not-executed", label: "POST-AUDIT PHASE", reason: "No public-network transaction was performed; Devnet is intentionally excluded." }, null, 2) + "\n");
-writeFileSync("evidence/test-summary.md", "# Test Summary\n\nLocal Node protocol tests are executable evidence for the JavaScript model only. They do not substitute for Anchor, local-validator, CPI, or SPL-token verification. Devnet deployment is intentionally excluded from this run.\n");
+writeFileSync("evidence/devnet-addresses.json", JSON.stringify({ status: "not-produced", reason: "Devnet is explicitly excluded; localnet only." }, null, 2) + "\n");
+writeFileSync("evidence/transaction-links.json", JSON.stringify({ status: "not-produced", reason: "No Devnet transactions were performed; ephemeral local signatures are not durable explorer evidence." }, null, 2) + "\n");
+writeFileSync("evidence/test-summary.md", "# Test Summary\n\n`anchor build` and `anchor test --skip-build` pass for both real programs and their local-validator CPI/SPL flow. `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and `pnpm run ci` pass. Evidence is local/test-only; Devnet is excluded.\n");

@@ -1,5 +1,4 @@
 {
-  "status": "not-executed",
-  "label": "POST-AUDIT PHASE",
-  "reason": "Devnet deployment is intentionally excluded from this run."
+  "status": "not-produced",
+  "reason": "Devnet is explicitly excluded; localnet only."
 }

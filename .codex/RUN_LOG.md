@@ -23,6 +23,6 @@
 - WP1 completed locally: added a dependency-free Rust protocol core, frozen binary CampaignConfig/project/Module layouts, Node parity code, and executable wire/overflow vectors. Rust clippy/tests and all existing pnpm checks passed before commit `fd36768` was pushed.
 - WP2 in progress: added authority-gated pause/resume/finalization and campaign-bound user-state checks. Focused adversarial Node tests pass.
 - WP2 committed and pushed as `8ef0042`. WP3 local-core work now includes receipt cancellation, replay retention after cancellation, and frozen Module-domain/namespace/canonicalizer checks; no Anchor Ed25519 inspection is claimed.
-- Continuation preflight: preserved user-owned prompt-file changes; reread specification, work plan, test matrix, checklist, reports, and state. `pnpm run ci` passed 15 Node tests and Rust format/clippy/tests passed 5 tests.
-- Created RED checkpoint `6330ece` for reward authority, lifecycle, deadline withdrawal/close, fixed amount, and one-claim-per-wallet behavior. Green implementation verification passed locally and awaits its separate checkpoint.
-- Added local Node Ed25519 verification for the frozen Module payload and tests that reject modified payload/signature values. This is explicitly not an Anchor instruction-sysvar implementation.
+- Continued inside Ubuntu/WSL2; installed and verified Anchor CLI 0.32.1 alongside Agave/Solana CLI and validator 4.1.1.
+- Added real BuilderLoop and CohortBuild Anchor programs, strict Ed25519 instruction-sysvar parsing, pending/finalized Module receipts, native wallet-bound CPI, SPL vault/Reward/Claim lifecycle, and a real local-validator integration suite.
+- Fixed CPI signer metadata and explicitly serialized Completion before the atomic CPI; local end-to-end test then passed.

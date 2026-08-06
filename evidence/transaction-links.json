@@ -1,5 +1,4 @@
 {
-  "status": "not-executed",
-  "label": "POST-AUDIT PHASE",
-  "reason": "No public-network transaction was performed; Devnet is intentionally excluded."
+  "status": "not-produced",
+  "reason": "No Devnet transactions were performed; ephemeral local signatures are not durable explorer evidence."
 }

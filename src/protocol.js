@@ -25,7 +25,7 @@ const CONFIG_FIELDS = [
 ];
 
 // This is the local model's fixed BuilderLoop program identity, never voucher-controlled.
-const BUILDERLOOP_PROGRAM_ID = "QWmroo4YnnMqYW3cnxWkFdaTxGD3P7vMSzwMHGbUzwF";
+const BUILDERLOOP_PROGRAM_ID = "3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2";
 
 export function configPayload(config) {
   return Object.fromEntries(CONFIG_FIELDS.map((field) => [field, config[field]]));

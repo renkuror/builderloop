@@ -1,49 +1,46 @@
 # BuilderLoop Project State
 
-Last updated: 2026-08-05T03:59:25+06:00
+Last updated: 2026-08-05 in Ubuntu/WSL2.
 
-## Repository and migration
+## Completed
 
-- Active branch: `codex/full-recovery-build`.
-- Safety branch: `backup/pre-migration` at the pre-recovery `codex/night-build` tip.
-- Old remote: `https://github.com/Skizm-tzz/builderloop.git`.
-- Requested new remote: `renkuror/builderloop`.
-- GitHub CLI verified `renkuror`; migration completed. `origin` is `https://github.com/renkuror/builderloop.git` and `old-origin` preserves the prior repository.
+- WP1 deterministic Rust/JavaScript wire layouts and vectors.
+- WP2 real CampaignConfig/UserProgress Anchor state machines.
+- WP3 strict Ed25519 instruction inspection, one-use ModuleReceipt pending/cancel/finalize lifecycle, verifier epoch invalidation, and Artifact Lineage.
+- WP4 real CohortBuild Challenge/Submission/Completion and wallet-bound source-PDA-signed CPI Ship with exact Completion validation.
+- WP5 classic SPL Token Reward/Claim/vault lifecycle, fixed transfers, deadline withdrawal, and explicit rent destinations.
+- WP6 issuer/reward CLI and three-screen wallet client reading actual program accounts and submitting claims.
+- WP7 local adversarial hardening and truthful architecture/threat/trust documentation.
+- WP8 local build/test evidence and reproducible commands.
 
-## Verified work status
-
-The previous JavaScript implementation is a behavioral simulation only. No Anchor workspace, on-chain account validation, Ed25519 instruction inspection, source-program CPI, SPL vault transfer, wallet integration, or cross-program test exists yet. Therefore WP1-WP8 are incomplete. Full claimed-versus-verified details are in `.codex/MIGRATION_AUDIT.md`.
+The pre-existing JavaScript model remains only a parity/reference layer. Completion claims are based on `programs/` plus local-validator tests.
 
 ## Toolchain
 
-- Installed: Git 2.55.0, GitHub CLI 2.95.0, Rust/Cargo 1.96.0, rustfmt, clippy, Node 24.14.1, npm 11.18.0, pnpm 11.9.0, TypeScript 5.9.3.
-- Missing: Solana CLI, Anchor CLI/AVM, a WSL distribution, native build tools.
-- WSL platform installation ran successfully and requires Windows restart. WSL distribution catalog lookup currently fails with `Wsl/WININET_E_CANNOT_CONNECT`.
-- Exact environment notes: `docs/TOOLCHAIN.md`.
+- Ubuntu 24.04.1 / WSL2; Rust/Cargo 1.97.1.
+- Agave/Solana CLI and `solana-test-validator` 4.1.1.
+- Anchor CLI/crates 0.32.1; AVM executable 1.1.2 is not used for selection.
+- Node 24.16.0; pnpm 11.9.0; TypeScript 5.9.3.
 
-## Commands
+## Green commands
 
-- Existing simulation checks: `pnpm run ci`, `pnpm evidence`, `pnpm secrets`.
-- TypeScript verification: `.\\node_modules\\.bin\\tsc.cmd --version`.
-- On-chain build/test commands will be added only after the actual Anchor workspace and supported WSL toolchain exist.
+- `cargo fmt --check`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- `cargo test --workspace`
+- `anchor build`
+- `anchor test --skip-build`
+- `pnpm run ci`
+- `pnpm evidence`
+- `pnpm secrets`
 
-## Current execution
+## Current / next
 
-- The prior JavaScript implementation has been reclassified as an incomplete protocol sketch, not deployed-program evidence.
-- The current recovery work starts with a dependency-free Rust protocol core plus TypeScript parity vectors, so deterministic P0 behavior remains testable while the validator toolchain is unavailable.
-- `cargo search anchor-cli --limit 1` succeeded after an escalated registry-access retry. The first pinned `anchor-cli 0.32.1` installation attempt was stopped after 60 seconds without a completed build; no partial installation is considered usable.
-- WP1 is verified in commit `fd36768`: Rust/Node binary bytes, SHA-256 hashes, project commitment, Module payload vectors, schedule bounds, and reward capacity are covered by executable local tests.
-- WP2 is locally verified and awaiting its checkpoint commit: authority-gated campaign lifecycle controls and user campaign binding are covered by focused negative tests plus the full Node suite.
+- Current: final release report, checklist reconciliation, clean checkpoint, push, and PR update.
+- Devnet/mainnet: explicitly excluded, not pending.
 
-## Next actions
+## Key paths
 
-1. Complete and test WP1 deterministic Rust/TypeScript vectors.
-2. Implement and adversarially test the campaign/module/ship/reward protocol core.
-3. Retry local Anchor/Solana installation only through a materially different documented route after a Windows restart; until then, preserve exact local-validator commands and do not claim those tests ran.
-
-## 2026-08-05 continuation
-
-- Baseline on `codex/full-recovery-build` at `758c8f1`: all existing Node/Rust checks pass. The user-owned deletion and untracked prompt file remain unstaged.
-- RED checkpoint `6330ece` covers local reward authority authorization for create/fund/activate/pause/resume/withdraw/close, per-wallet Claim-PDA-equivalent uniqueness, and fixed claim amounts.
-- The matching implementation is pending a green checkpoint. It remains deterministic local-model evidence only: no SPL Token, actual PDA, or local-validator claim is made.
-- Local Module submissions now require an Ed25519 signature over the frozen payload; field or signature substitution is executable-test covered. Anchor instruction-sysvar offsets/parsing remain unimplemented and are not inferred from Node crypto verification.
+- Programs: `programs/builderloop`, `programs/cohort-build`
+- Integration: `tests/anchor/localnet.test.js`
+- Client/CLI: `web/`, `cli/builderloop.js`
+- Evidence/docs: `evidence/`, `docs/`, `DEPLOY.md`, `FINAL_REPORT.md`
