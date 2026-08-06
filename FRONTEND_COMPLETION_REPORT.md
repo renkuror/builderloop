@@ -2,7 +2,7 @@
 
 ## Status
 
-`PENDING_PUSH_AND_PR` — implementation, local visual evidence, and reproducible frontend checks are complete. Commit, push, and pull-request details will be recorded after publication.
+`COMPLETE_WITH_LOCAL_TOOLCHAIN_BLOCKERS` — implementation, local visual evidence, reproducible frontend checks, branch push, and draft pull request are complete. The Windows-native Anchor/local-validator checks remain blocked exactly as recorded below; no result is fabricated.
 
 ## Delivered frontend
 
@@ -40,6 +40,7 @@ Eleven actual, unretouched fixture screenshots are stored under `docs/assets/fro
 ## Publication
 
 - Branch: `codex/mechanical-manga-frontend`
-- Commit: pending
-- Push: pending
-- Pull request into `main`: pending
+- Implementation commit: `5eba2d1` (`feat: add mechanical manga judge frontend`)
+- Push: `origin/codex/mechanical-manga-frontend`
+- Pull request into `main`: [#3 — feat: mechanical manga judge frontend](https://github.com/renkuror/builderloop/pull/3)
+- PR state: draft, intentionally not merged

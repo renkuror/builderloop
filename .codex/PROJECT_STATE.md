@@ -40,7 +40,7 @@ The pre-existing JavaScript model remains only a parity/reference layer. Complet
 
 ## Current / next
 
-- Current: mechanical-manga frontend checkpoint, push, and PR update.
+- Current: draft PR #3 opened for mechanical-manga frontend; preserve unmerged state for review.
 - Devnet/mainnet: explicitly excluded, not pending.
 
 ## 2026-08-06 Frontend checkpoint

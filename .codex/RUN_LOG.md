@@ -34,3 +34,4 @@
 - Added Node unit coverage and Playwright route/interaction/mobile checks; captured eleven actual fixture screenshots under `docs/assets/frontend/` and updated the truthful runbook, shotlist, manual QA, and red-team review.
 - Verified `pnpm run ci`, standalone frontend build/tests, Playwright (10 passing), portable `scripts/verify-frontend.sh`, secret scan, and production dependency audit.
 - The Windows host lacked Anchor and blocked Cargo build-script execution with `os error 5`; no native/local-validator command was reported as green from this host.
+- Committed frontend delivery as `5eba2d1`, pushed `codex/mechanical-manga-frontend`, and opened draft PR #3 into `main` without merging.
