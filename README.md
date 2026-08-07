@@ -1,6 +1,6 @@
 # BuilderLoop
 
-BuilderLoop is a localnet-only Anchor MVP for an ordered campaign path:
+BuilderLoop is an Anchor MVP with a reproducible public Devnet demonstration for an ordered campaign path:
 
 `verifier-attested Module → real Clock delay/period gap → same-wallet same-project CohortBuild CPI Ship → fixed pre-funded SPL claim`
 
@@ -23,7 +23,7 @@ pnpm run ci
 pnpm secrets
 ```
 
-All wallets, mints, vault inventory, CPIs, and transactions used by the integration suite are ephemeral local-validator fixtures. Devnet and mainnet are excluded.
+The integration suite uses ephemeral local-validator fixtures. The public Devnet release uses a dedicated external fee payer and records only public addresses and transaction signatures. Mainnet is absolutely forbidden. See `docs/DEVNET_RUNBOOK.md` for the guarded deployment/demo path.
 
 ## Client surfaces
 

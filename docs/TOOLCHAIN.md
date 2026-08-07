@@ -49,4 +49,4 @@ The blocker above is historical. Ubuntu/WSL now verifies Rust/Cargo 1.97.1, Node
 cargo install anchor-cli --version 0.32.1 --locked --force
 ```
 
-Both `anchor build` and `anchor test --skip-build` run successfully against localnet. Devnet remains excluded.
+Both `anchor build` and `anchor test --skip-build` run successfully against localnet. The public Devnet deployment and evidence are documented in `DEVNET_RUNBOOK.md` and verified by `pnpm devnet:verify`.

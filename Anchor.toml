@@ -10,6 +10,13 @@ skip-lint = false
 builderloop = "3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2"
 cohort_build = "BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF"
 
+# Devnet intentionally reuses the audited local program identities. Keeping the
+# IDs fixed preserves the BuilderLoop voucher domain and the CohortBuild CPI
+# target; it does not make a local validator deployment a Devnet deployment.
+[programs.devnet]
+builderloop = "3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2"
+cohort_build = "BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF"
+
 [provider]
 cluster = "Localnet"
 wallet = "/tmp/builderloop-local-authority.json"

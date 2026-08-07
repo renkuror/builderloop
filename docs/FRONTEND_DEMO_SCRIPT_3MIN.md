@@ -1,5 +1,7 @@
 # BuilderLoop Three-Minute Demo Script
 
+> Historical fixture-recording script. The current public Devnet workflow and evidence are documented in [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md) and [docs/DEVNET_RUNBOOK.md](DEVNET_RUNBOOK.md).
+
 ## Use and evidence status
 
 This extended script explains the protocol and its client surface without turning prepared UI into false network proof. **Final recording is pending.** The default path is a no-wallet local fixture marked **DEMO FIXTURE — NOT LIVE**; the optional connected panel is **LIVE LOCAL VALIDATOR**, not Devnet.

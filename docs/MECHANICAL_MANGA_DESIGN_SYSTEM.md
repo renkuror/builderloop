@@ -74,7 +74,7 @@ Labels are evidence claims, not decorative badges:
 | --- | --- |
 | **DEMO FIXTURE — NOT LIVE** | Prepared read-only state. It must never be mistaken for a wallet signature, transfer, or public network event. |
 | **LIVE LOCAL VALIDATOR** | Optional connected path against the repository's local validator and genuine local account addresses. |
-| `LIVE DEVNET` | Use only after a real Devnet deployment and directly verifiable Devnet accounts/transactions exist. It is not currently available. |
+| `LIVE DEVNET` | Used only after the real Devnet deployment and directly verifiable Devnet accounts/transactions recorded in the release evidence exist. |
 
 ## Route patterns
 

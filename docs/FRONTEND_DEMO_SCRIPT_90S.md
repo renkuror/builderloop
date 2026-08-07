@@ -1,5 +1,7 @@
 # BuilderLoop 90-Second Demo Script
 
+> Historical fixture-recording script. The current public Devnet workflow and evidence are documented in [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md) and [docs/DEVNET_RUNBOOK.md](DEVNET_RUNBOOK.md).
+
 ## Use and evidence status
 
 This script is for the final recording. **Recording status: pending.** It assumes the prepared no-wallet fixture path and must never be voiced as a live Devnet transaction. Keep **DEMO FIXTURE — NOT LIVE** visible whenever fixture data is on screen.

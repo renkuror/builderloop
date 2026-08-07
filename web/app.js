@@ -12,10 +12,31 @@ import {
   getScenario,
 } from "./ui.js";
 
-const PROGRAM_ID = new PublicKey(EVIDENCE.program);
+const PUBLIC_CONFIG = globalThis.BUILDERLOOP_PUBLIC_CONFIG ?? {
+  cluster: "devnet",
+  rpcUrl: "https://api.devnet.solana.com",
+  live: false,
+  builderloopProgramId: EVIDENCE.program,
+  cohortBuildProgramId: EVIDENCE.cohortBuild,
+  demo: null,
+};
+const PROGRAM_ID = new PublicKey(PUBLIC_CONFIG.builderloopProgramId);
+const COHORT_BUILD_ID = new PublicKey(PUBLIC_CONFIG.cohortBuildProgramId);
+const DEVNET_GENESIS_HASH = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
+const DEMO = PUBLIC_CONFIG.demo;
+const LIVE_DEVNET = PUBLIC_CONFIG.cluster === "devnet" && PUBLIC_CONFIG.live === true && DEMO !== null;
 const app = document.querySelector("#app");
 const sound = createSoundController();
-const live = { wallet: undefined, connection: undefined, campaign: undefined, progress: undefined, reward: undefined };
+const live = {
+  wallet: undefined,
+  connection: undefined,
+  campaign: undefined,
+  progress: undefined,
+  reward: undefined,
+  demoProgress: undefined,
+  configuredState: "idle",
+  configuredError: undefined,
+};
 const state = {
   scenario: new URLSearchParams(window.location.search).get("scenario") ?? "shipped",
   selectedStage: "return",
@@ -33,6 +54,20 @@ const $ = (selector) => document.querySelector(selector);
 const code = (value) => `<code>${value}</code>`;
 const link = (url, label) => `<a class="key-button compact secondary external-key" href="${url}" target="_blank" rel="noreferrer">${label}<span aria-hidden="true"> ↗</span></a>`;
 const panel = (id, title, body, extraClass = "") => `<section class="technical-panel ${extraClass}" aria-labelledby="${id}"><p class="panel-kicker">${id.toUpperCase()}</p><h2 id="${id}">${title}</h2>${body}</section>`;
+const explorerAddress = (address) => `https://explorer.solana.com/address/${address}?cluster=devnet`;
+const explorerTransaction = (signature) => `https://explorer.solana.com/tx/${signature}?cluster=devnet`;
+
+function devnetLabel(scenario) {
+  return LIVE_DEVNET ? "LIVE DEVNET" : scenario.networkLabel;
+}
+
+function stageName(progress = live.demoProgress ?? live.progress) {
+  return progress ? (stages[progress.stage] ?? "Unknown") : "Loading";
+}
+
+function rewardStateName(reward = live.reward) {
+  return reward ? (rewardStatuses[reward.status] ?? "Unknown") : "Loading";
+}
 
 function normalisedPath() {
   const path = window.location.pathname.replace(/\/index\.html$/, "").replace(/\/$/, "");
@@ -65,16 +100,28 @@ function keyboardArt() {
 
 function renderHeader(route, scenario) {
   const nav = ROUTES.map((item) => `<a class="key-button navigation ${item.path === route.path ? "is-active" : ""}" href="${routeHref(item.path)}" ${item.path === route.path ? 'aria-current="page"' : ""}>${item.label}</a>`).join("");
-  return `<header class="site-header"><a class="wordmark" href="/" aria-label="BuilderLoop overview">BUILDER<span>LOOP</span><small>BL / RETURN INSTRUMENT</small></a><nav class="route-nav" aria-label="BuilderLoop pages">${nav}</nav><div class="header-tools"><span class="network-label" data-network="fixture">${scenario.networkLabel}</span><span id="sound-toggle"></span></div></header>`;
+  return `<header class="site-header"><a class="wordmark" href="/" aria-label="BuilderLoop overview">BUILDER<span>LOOP</span><small>BL / RETURN INSTRUMENT</small></a><nav class="route-nav" aria-label="BuilderLoop pages">${nav}</nav><div class="header-tools"><span class="network-label" data-network="${LIVE_DEVNET ? "devnet" : "fixture"}">${devnetLabel(scenario)}</span><span id="sound-toggle"></span></div></header>`;
 }
 
 function renderReturnRail(scenario) {
-  const selected = scenario.rail.find((stage) => stage.id === state.selectedStage) ?? scenario.rail[1];
-  return `<section class="return-rail technical-panel" aria-labelledby="return-rail-title"><div class="section-heading"><div><p class="panel-kicker">BL_04 / ORDERED RETURN</p><h2 id="return-rail-title">Return Rail</h2></div><span class="status-chip" data-state="${scenario.rail.at(-1).state}">${scenario.statusLabel}</span></div><div class="rail-stages" role="group" aria-label="Open proof detail for each return stage">${scenario.rail.map((stage) => `<button class="${keyClass(stage)} ${stage.id === selected.id ? "is-selected" : ""}" type="button" data-action="select-stage" data-stage="${stage.id}" data-state="${stage.state}" aria-pressed="${stage.id === selected.id}"><span>${stage.number}</span><strong>${stage.label}</strong><em>${stage.state}</em></button>`).join("")}</div><div id="proof-drawer" class="proof-drawer" tabindex="-1"><p class="panel-kicker">PROOF DRAWER / ${selected.number}</p><h3>${selected.label} <span class="state-line" data-state="${selected.state}">${selected.state}</span></h3><p>${selected.proof}</p><p><strong>Fixture interpretation:</strong> ${scenario.reason}</p><details><summary>Raw evidence or error detail</summary>${code(scenario.rawError)}</details></div></section>`;
+  const demoProgress = live.demoProgress;
+  const shipped = demoProgress?.stage === 3;
+  const claimed = live.reward?.claimed === live.reward?.maxClaims && live.reward?.maxClaims > 0;
+  const rail = LIVE_DEVNET ? [
+    { id: "module", number: "01", label: "MODULE", state: demoProgress?.stage >= 2 ? "finalized" : "loading", proof: "Devnet ModuleReceipt is refetched from the configured BuilderLoop program." },
+    { id: "return", number: "02", label: "RETURN GATE", state: shipped ? "satisfied" : "loading", proof: "The released DEMO CONFIGURATION uses a real Solana Clock gate: 2 seconds and one 2-second period." },
+    { id: "ship", number: "03", label: "SHIP", state: shipped ? "shipped" : "loading", proof: "CohortBuild Completion reached BuilderLoop through the native CPI transaction recorded in public evidence." },
+    { id: "reward", number: "04", label: "REWARD", state: claimed ? "claimed" : rewardStateName().toLowerCase(), proof: "Reward and Claim state are read from Devnet accounts; the fixed amount is never supplied by the claimant." },
+  ] : scenario.rail;
+  const selected = rail.find((stage) => stage.id === state.selectedStage) ?? rail[1];
+  const status = LIVE_DEVNET ? (shipped ? (claimed ? "CLAIMED" : "SHIPPED") : "LOADING") : scenario.statusLabel;
+  const evidence = LIVE_DEVNET ? `Devnet state: UserProgress ${stageName()} · Reward ${rewardStateName()}. ${live.configuredError ?? ""}` : scenario.reason;
+  return `<section class="return-rail technical-panel" aria-labelledby="return-rail-title"><div class="section-heading"><div><p class="panel-kicker">BL_04 / ORDERED RETURN</p><h2 id="return-rail-title">Return Rail</h2></div><span class="status-chip" data-state="${rail.at(-1).state}">${status}</span></div><div class="rail-stages" role="group" aria-label="Open proof detail for each return stage">${rail.map((stage) => `<button class="${keyClass(stage)} ${stage.id === selected.id ? "is-selected" : ""}" type="button" data-action="select-stage" data-stage="${stage.id}" data-state="${stage.state}" aria-pressed="${stage.id === selected.id}"><span>${stage.number}</span><strong>${stage.label}</strong><em>${stage.state}</em></button>`).join("")}</div><div id="proof-drawer" class="proof-drawer" tabindex="-1"><p class="panel-kicker">PROOF DRAWER / ${selected.number}</p><h3>${selected.label} <span class="state-line" data-state="${selected.state}">${selected.state}</span></h3><p>${selected.proof}</p><p><strong>${LIVE_DEVNET ? "Devnet account interpretation" : "Fixture interpretation"}:</strong> ${evidence}</p><details><summary>Raw evidence or error detail</summary>${code(LIVE_DEVNET ? `Campaign ${DEMO.campaign}; Program ${PROGRAM_ID.toBase58()}; RPC ${PUBLIC_CONFIG.rpcUrl}` : scenario.rawError)}</details></div></section>`;
 }
 
 function renderHero() {
-  return `<section class="hero"><div class="hero-copy"><p class="panel-kicker">BUILDERLOOP / ORDERED RETURN REWARDS FOR SOLANA COHORTS</p><h1>Points cannot substitute for return.</h1><p class="hero-lede">BuilderLoop freezes an ordered Module → Return Later → Ship path on-chain, then releases a pre-funded fixed reward only after the same wallet returns through the campaign-defined gate.</p><div class="key-row"><a class="key-button primary" href="/demo/">OPEN JUDGE DEMO</a><a class="key-button secondary" href="/evidence/">VIEW EVIDENCE</a>${link("https://github.com/renkuror/builderloop", "GitHub")}</div><p class="trust-note">One fixed localnet campaign. The verifier and source semantics are disclosed trust boundaries; this is not a claim of Sybil resistance or independent sponsorship.</p></div>${keyboardArt()}</section>`;
+  const note = LIVE_DEVNET ? "One fixed Devnet DEMO CONFIGURATION. The verifier and source semantics are disclosed trust boundaries; this is not a claim of Sybil resistance or independent sponsorship." : "One fixed localnet campaign. The verifier and source semantics are disclosed trust boundaries; this is not a claim of Sybil resistance or independent sponsorship.";
+  return `<section class="hero"><div class="hero-copy"><p class="panel-kicker">BUILDERLOOP / ORDERED RETURN REWARDS FOR SOLANA COHORTS</p><h1>Points cannot substitute for return.</h1><p class="hero-lede">BuilderLoop freezes an ordered Module → Return Later → Ship path on-chain, then releases a pre-funded fixed reward only after the same wallet returns through the campaign-defined gate.</p><div class="key-row"><a class="key-button primary" href="/demo/">OPEN JUDGE DEMO</a><a class="key-button secondary" href="/evidence/">VIEW EVIDENCE</a>${link("https://github.com/renkuror/builderloop", "GitHub")}</div><p class="trust-note">${note}</p></div>${keyboardArt()}</section>`;
 }
 
 function renderComparison() {
@@ -82,7 +129,10 @@ function renderComparison() {
 }
 
 function renderOverview(scenario) {
-  return `${renderHero()}${renderReturnRail(scenario)}${renderComparison()}${panel("trust-disclosure", "What is enforced, and what is disclosed", `<div class="detail-grid"><div><h3>Enforced on localnet</h3><p>Frozen eligibility fields, verifier epoch, pending receipt, wallet/project binding, source account checks, time/period gates, native CPI Ship, and fixed SPL settlement.</p></div><div><h3>Disclosed trust boundary</h3><p>The campaign authority configures before freeze; the verifier and CohortBuild source carry defined authority. Devnet evidence is not produced.</p></div></div>`)}`;
+  const trust = LIVE_DEVNET
+    ? `<div class="detail-grid"><div><h3>Enforced on Devnet</h3><p>Frozen eligibility fields, pending receipt, wallet/project binding, real Clock gates, native CPI Ship, and fixed classic-SPL settlement are live account state.</p></div><div><h3>Disclosed trust boundary</h3><p>This is a clearly labeled DEMO CONFIGURATION. It is not a claim of Sybil resistance, independent sponsorship, or organic retention.</p></div></div>`
+    : `<div class="detail-grid"><div><h3>Enforced on localnet</h3><p>Frozen eligibility fields, verifier epoch, pending receipt, wallet/project binding, source account checks, time/period gates, native CPI Ship, and fixed SPL settlement.</p></div><div><h3>Disclosed trust boundary</h3><p>The campaign authority configures before freeze; the verifier and CohortBuild source carry defined authority. Devnet evidence is not produced.</p></div></div>`;
+  return `${renderHero()}${renderReturnRail(scenario)}${renderComparison()}${panel("trust-disclosure", "What is enforced, and what is disclosed", trust)}`;
 }
 
 function scenarioControls(scenario) {
@@ -90,24 +140,35 @@ function scenarioControls(scenario) {
 }
 
 function renderDemo(scenario) {
-  return `${panel("judge-demo", "Prepared proof path — no wallet required", `<p class="intro-copy">This is a deterministic read-only representation of the localnet scenario. It exposes the actual frozen identifiers and account model without inventing a live transaction or explorer link.</p>${scenarioControls(scenario)}<div class="detail-grid"><div><span class="metric-label">Campaign return rule</span><strong>120 seconds + 2 × 60-second periods</strong><p>Module must be finalized before Ship.</p></div><div><span class="metric-label">Prepared state</span><strong>${scenario.stage}</strong><p>${scenario.earliestShip}</p></div></div>`) }${renderReturnRail(scenario)}${panel("fixture-proof", "Fixture proof inventory", `<dl class="proof-list"><dt>Module receipt</dt><dd>${code(EVIDENCE.attestationHash)}<span>Verifier epoch 7; canonical event hash is retained for replay resistance.</span></dd><dt>Completion / Ship</dt><dd>Prepared localnet state only; no durable public signature is shown.</dd><dt>Reward</dt><dd>Fixed 1,000,000 base units from a classic SPL test-mint vault.</dd><dt>Claim</dt><dd>${scenario.claim}</dd><dt>Program IDs</dt><dd>BuilderLoop ${code(EVIDENCE.program)} CohortBuild ${code(EVIDENCE.cohortBuild)}</dd></dl><p class="trust-note">Enforcement is on local validator in the repository test suite. Fixture controls do not sign, submit, or claim.</p>`)}`;
+  if (LIVE_DEVNET) {
+    return `${panel("judge-demo", "Public Devnet proof path", `<p class="intro-copy">${DEMO.label}. These are real Devnet accounts, not a fixture. The short gates exist only for this public demonstration.</p><div class="detail-grid"><div><span class="metric-label">Campaign return rule</span><strong>${DEMO.timing.minimumElapsedSeconds} seconds + ${DEMO.timing.minimumPeriodGap} × ${DEMO.timing.periodSeconds}-second period</strong><p>Module finalization and Ship were separate Devnet transactions.</p></div><div><span class="metric-label">Verified account state</span><strong>${stageName()}</strong><p>Reward: ${rewardStateName()}.</p></div></div>`) }${renderReturnRail(scenario)}${panel("devnet-proof", "Public proof inventory", `<dl class="proof-list"><dt>Campaign</dt><dd>${code(DEMO.campaign)} ${link(explorerAddress(DEMO.campaign), "EXPLORER")}</dd><dt>Module finalization</dt><dd>${link(DEMO.transactions.moduleFinalization.explorerUrl, "VIEW TX")}</dd><dt>Completion / native Ship</dt><dd>${link(DEMO.transactions.nativeCpiShip.explorerUrl, "VIEW TX")}</dd><dt>Fixed SPL Reward Claim</dt><dd>${link(DEMO.transactions.rewardClaimed.explorerUrl, "VIEW TX")}</dd><dt>Program IDs</dt><dd>BuilderLoop ${code(PROGRAM_ID.toBase58())} ${link(explorerAddress(PROGRAM_ID.toBase58()), "EXPLORER")} CohortBuild ${code(COHORT_BUILD_ID.toBase58())} ${link(explorerAddress(COHORT_BUILD_ID.toBase58()), "EXPLORER")}</dd></dl><p class="trust-note">Each link is a genuine Devnet account or finalized transaction. The SPL test mint has no implied value.</p>`)}`;
+  }
+  return `${panel("judge-demo", "Prepared proof path — no wallet required", `<p class="intro-copy">This is a deterministic read-only representation of the localnet scenario. It exposes the actual frozen identifiers and account model without inventing a live transaction or explorer link.</p>${scenarioControls(scenario)}<div class="detail-grid"><div><span class="metric-label">Campaign return rule</span><strong>120 seconds + 2 × 60-second periods</strong><p>Module must be finalized before Ship.</p></div><div><span class="metric-label">Prepared state</span><strong>${scenario.stage}</strong><p>${scenario.earliestShip}</p></div></div>`) }${renderReturnRail(scenario)}`;
 }
 
 function renderCampaign() {
-  return `${panel("campaign-config", "Frozen campaign configuration", `<p class="intro-copy">Eligibility-critical configuration is immutable after freeze. These values come from the deterministic campaign evidence fixture and are labeled accordingly.</p><div class="detail-grid"><div><span class="metric-label">Campaign status</span><strong>Active fixture</strong><p>Actions unpaused in the exported local test configuration.</p></div><div><span class="metric-label">Funding state</span><strong>Localnet test scope</strong><p>No Devnet funding or public sponsor evidence is claimed.</p></div></div><dl class="proof-list"><dt>Campaign authority</dt><dd>${code("4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi")}</dd><dt>Verifier / epoch</dt><dd>${code(EVIDENCE.verifier)} · epoch 7 · active in fixture</dd><dt>Reward authority</dt><dd>${code(EVIDENCE.rewardAuthority)}</dd><dt>Source program / authority</dt><dd>${code(EVIDENCE.sourceProgram)} / ${code(EVIDENCE.sourceAuthority)}</dd><dt>Challenge ID</dt><dd>42</dd><dt>Campaign window</dt><dd>Eight 60-second fixture periods. The local validator uses its own test clock.</dd><dt>Return gate</dt><dd>120 elapsed seconds and a minimum two-period gap.</dd><dt>Frozen config hash</dt><dd>${code(EVIDENCE.configHash)} <button class="key-button compact" type="button" data-action="copy" data-copy="${EVIDENCE.configHash}">COPY HASH</button></dd></dl><p class="trust-note">The verifier is a disclosed, configured role. The frozen source namespace and canonicalizer version are not user-controlled.</p>`)}`;
+  if (LIVE_DEVNET) {
+    const campaign = live.campaign;
+    const detail = campaign ? `<dl class="proof-list"><dt>Campaign</dt><dd>${code(campaign.address.toBase58())} ${link(explorerAddress(campaign.address.toBase58()), "EXPLORER")}</dd><dt>Status</dt><dd>${campaignStatuses[campaign.status] ?? "Unknown"} · actions ${campaign.paused ? "paused" : "unpaused"}</dd><dt>Verifier / epoch</dt><dd>${code(campaign.verifier.toBase58())} · epoch ${campaign.verifierEpoch} · ${campaign.verifierActive ? "active" : "inactive"}</dd><dt>Reward authority</dt><dd>${code(campaign.rewardAuthority.toBase58())}</dd><dt>Source program / authority</dt><dd>${code(campaign.sourceProgram.toBase58())} / ${code(campaign.sourceAuthority.toBase58())}</dd><dt>Challenge ID</dt><dd>${campaign.challengeId.toString()}</dd><dt>Return gate</dt><dd>${campaign.minElapsedSeconds} seconds and ${campaign.minPeriodGap} period(s) of ${campaign.periodSeconds} seconds.</dd><dt>Frozen config hash</dt><dd>${code(hex(campaign.configHash))}</dd></dl>` : `<p class="transaction-state">${live.configuredState === "failed" ? live.configuredError : "Loading configured Devnet Campaign…"}</p>`;
+    return `${panel("campaign-config", "Frozen campaign configuration", `<p class="intro-copy">Eligibility-critical configuration below is read directly from the live Devnet Campaign account.</p>${detail}<p class="trust-note">${DEMO.label}; the short timing is demo-only.</p>`)}`;
+  }
+  return `${panel("campaign-config", "Frozen campaign configuration", `<p class="intro-copy">Eligibility-critical configuration is immutable after freeze. These values come from the deterministic campaign evidence fixture and are labeled accordingly.</p>`)}`;
 }
 
 function renderLivePanel(kind) {
-  const actionLabel = kind === "reward" ? "VERIFY LOCAL CLAIM" : "LOAD LOCAL ACCOUNTS";
-  return `<section class="technical-panel live-panel" aria-labelledby="live-panel-title"><p class="panel-kicker">BL_09 / OPTIONAL WALLET PATH</p><h2 id="live-panel-title">LIVE LOCAL VALIDATOR</h2><p>Use only with the repository's local validator. This panel is inactive until a compatible wallet and genuine local account addresses are provided.</p><div class="field-grid"><label>RPC URL<input id="rpc-url" type="url" inputmode="url" autocomplete="url" value="http://127.0.0.1:8899"></label><label>Campaign PDA<input id="campaign-address" type="text" autocomplete="off" placeholder="Local Campaign PDA"></label><label>Reward PDA<input id="reward-address" type="text" autocomplete="off" placeholder="Local Reward PDA (optional for read)"></label><label>Recipient token account<input id="recipient-address" type="text" autocomplete="off" placeholder="Signer-owned local token account"></label></div><div class="key-row"><button id="connect-wallet" class="key-button primary" type="button">CONNECT LOCAL WALLET</button><button id="load-live" class="key-button secondary" type="button">${actionLabel}</button><button id="claim-live" class="key-button success" type="button" disabled>CLAIM FIXED PAYOUT</button></div><output id="live-output" class="transaction-state" aria-live="polite">No local wallet or accounts loaded. The public fixture above remains usable without either.</output></section>`;
+  const actionLabel = kind === "reward" ? "VERIFY DEVNET CLAIM" : "LOAD DEVNET ACCOUNTS";
+  const devnet = LIVE_DEVNET;
+  return `<section class="technical-panel live-panel" aria-labelledby="live-panel-title"><p class="panel-kicker">BL_09 / OPTIONAL WALLET PATH</p><h2 id="live-panel-title">${devnet ? "LIVE DEVNET" : "LIVE LOCAL VALIDATOR"}</h2><p>${devnet ? "This account reader is pinned to Devnet. It checks the RPC genesis before reading state or offering a wallet transaction." : "Use only with the repository's local validator."}</p><div class="field-grid"><label>RPC URL<input id="rpc-url" type="url" inputmode="url" autocomplete="url" value="${devnet ? PUBLIC_CONFIG.rpcUrl : "http://127.0.0.1:8899"}"></label><label>Campaign PDA<input id="campaign-address" type="text" autocomplete="off" value="${devnet ? DEMO.campaign : ""}" placeholder="Campaign PDA"></label><label>Reward PDA<input id="reward-address" type="text" autocomplete="off" value="${devnet ? DEMO.reward : ""}" placeholder="Reward PDA (optional for read)"></label><label>Recipient token account<input id="recipient-address" type="text" autocomplete="off" value="${devnet ? DEMO.recipient : ""}" placeholder="Signer-owned token account"></label></div><div class="key-row"><button id="connect-wallet" class="key-button primary" type="button">CONNECT ${devnet ? "DEVNET" : "LOCAL"} WALLET</button><button id="load-live" class="key-button secondary" type="button">${actionLabel}</button><button id="claim-live" class="key-button success" type="button" disabled>CLAIM FIXED PAYOUT</button></div><output id="live-output" class="transaction-state" aria-live="polite">${devnet ? "Public Devnet state loads automatically. Connect a Devnet wallet to read its UserProgress and verify a supported Claim." : "No local wallet or accounts loaded."}</output></section>`;
 }
 
 function renderProgress(scenario) {
-  return `${panel("progress", "Wallet-bound progress", `<p class="intro-copy">The public view stays read-only. The optional local path only marks a success after the program account is refetched and verified.</p><div class="detail-grid"><div><span class="metric-label">Current fixture stage</span><strong>${scenario.stage}</strong><p>${scenario.reason}</p></div><div><span class="metric-label">Earliest Ship</span><strong>${scenario.earliestShip}</strong><p>Clock-derived gates are program-validated, not user supplied.</p></div></div><dl class="proof-list"><dt>Module receipt</dt><dd>${code(EVIDENCE.attestationHash)}</dd><dt>Project commitment</dt><dd>${code(EVIDENCE.projectId)}</dd><dt>Completion</dt><dd>Source account is validated for owner, discriminator, PDA, challenge, project, and authority before Ship.</dd><dt>Artifact hash</dt><dd>${code(EVIDENCE.artifactHash)}</dd><dt>Transaction proof</dt><dd>No public Explorer link: local-validator signatures are ephemeral and no Devnet transaction was produced.</dd></dl>`) }${renderReturnRail(scenario)}${renderLivePanel("progress")}`;
+  const content = LIVE_DEVNET ? `<p class="intro-copy">The public Devnet user state is refetched from the configured UserProgress PDA. A connected wallet is additionally checked against its own PDA.</p><div class="detail-grid"><div><span class="metric-label">Configured DEMO progress</span><strong>${stageName()}</strong><p>Native CohortBuild CPI is recorded as Shipped before reward settlement.</p></div><div><span class="metric-label">Completion / Ship</span><strong>${link(DEMO.transactions.nativeCpiShip.explorerUrl, "VIEW CPI TX")}</strong><p>Explorer shows the real Devnet transaction.</p></div></div><dl class="proof-list"><dt>UserProgress</dt><dd>${code(DEMO.userProgress)} ${link(explorerAddress(DEMO.userProgress), "EXPLORER")}</dd><dt>Module finalization</dt><dd>${link(DEMO.transactions.moduleFinalization.explorerUrl, "VIEW TX")}</dd><dt>Completion</dt><dd>Owner, discriminator, PDA, challenge, wallet, and project are enforced by BuilderLoop.</dd><dt>Clock gate</dt><dd>${DEMO.timing.minimumElapsedSeconds} seconds plus ${DEMO.timing.minimumPeriodGap} period.</dd></dl>` : `<p class="intro-copy">The public view stays read-only. The optional local path only marks a success after the program account is refetched and verified.</p>`;
+  return `${panel("progress", "Wallet-bound progress", content) }${renderReturnRail(scenario)}${renderLivePanel("progress")}`;
 }
 
 function renderReward(scenario) {
-  return `${panel("reward", "Fixed reward settlement", `<p class="intro-copy">Reward amount is stored in the Reward account; the claimant does not supply it. The live client validates the signer-owned, same-mint recipient account before calling Claim.</p><div class="detail-grid"><div><span class="metric-label">Fixed amount</span><strong>1,000,000 base units</strong><p>Classic SPL local test mint only. No token valuation is implied.</p></div><div><span class="metric-label">Claim status</span><strong>${scenario.statusLabel === "CLAIMED" ? "Claimed fixture" : "Claimable fixture"}</strong><p>${scenario.claim}</p></div></div><dl class="proof-list"><dt>Mint</dt><dd>${code(EVIDENCE.mint)}</dd><dt>Vault inventory</dt><dd>Activation requires sufficient funding for the fixed claims; local fixture has one prepared claim.</dd><dt>Claim window</dt><dd>Local validator test clock only. The deadline also governs remainder withdrawal.</dd><dt>Recipient</dt><dd>Claim recipient must belong to the claiming signer and use the reward mint.</dd><dt>Duplicate protection</dt><dd>One Claim PDA exists per reward and wallet.</dd><dt>Withdrawal / close</dt><dd>Only after the configured deadline and under the separate reward authority.</dd></dl><div class="key-row"><button class="key-button ${scenario.id === "claimed" ? "destructive" : "primary"}" type="button" data-action="fixture-claim">${scenario.id === "claimed" ? "SHOW DUPLICATE REJECTION" : "PLAY FIXTURE CLAIM"}</button></div><p class="trust-note">Fixture playback is explicitly not a wallet signature, token transfer, or live settlement.</p>`) }${renderReturnRail(scenario)}${renderLivePanel("reward")}`;
+  const content = LIVE_DEVNET ? `<p class="intro-copy">Reward amount is stored in the Devnet Reward account; the claimant does not supply it. The verified demo Claim used a signer-owned same-mint recipient account.</p><div class="detail-grid"><div><span class="metric-label">Fixed amount</span><strong>${live.reward ? live.reward.amount.toString() : DEMO.label}</strong><p>Classic SPL test mint only. No token valuation is implied.</p></div><div><span class="metric-label">Claim status</span><strong>${rewardStateName()}</strong><p>${live.reward ? `${live.reward.claimed}/${live.reward.maxClaims} claims` : "Loading Devnet Reward"}</p></div></div><dl class="proof-list"><dt>Reward</dt><dd>${code(DEMO.reward)} ${link(explorerAddress(DEMO.reward), "EXPLORER")}</dd><dt>Mint</dt><dd>${code(DEMO.mint)} ${link(explorerAddress(DEMO.mint), "EXPLORER")}</dd><dt>Claim</dt><dd>${code(DEMO.claim)} ${link(explorerAddress(DEMO.claim), "EXPLORER")}</dd><dt>Settlement transaction</dt><dd>${link(DEMO.transactions.rewardClaimed.explorerUrl, "VIEW CLAIM TX")}</dd><dt>Duplicate protection</dt><dd>One Claim PDA exists per reward and wallet.</dd></dl><p class="trust-note">This completed DEMO CONFIGURATION has one claimed fixed payout. A connected wallet can load and verify its own supported Claim path; it cannot receive a payout without a Shipped UserProgress.</p>` : `<p class="intro-copy">Reward amount is stored in the Reward account; the claimant does not supply it.</p>`;
+  return `${panel("reward", "Fixed reward settlement", content) }${renderReturnRail(scenario)}${renderLivePanel("reward")}`;
 }
 
 function renderArchitecture() {
@@ -130,7 +191,8 @@ function architectureDescription(node) {
 }
 
 function renderEvidence() {
-  return `${panel("evidence", "Reproducible evidence", `<div class="detail-grid"><div><span class="metric-label">Repository</span><strong>Public GitHub</strong><p>${link("https://github.com/renkuror/builderloop", "renkuror/builderloop")}</p></div><div><span class="metric-label">Network evidence</span><strong>Localnet only</strong><p>Devnet address and transaction-link files explicitly state not-produced.</p></div></div><dl class="proof-list"><dt>BuilderLoop program</dt><dd>${code(EVIDENCE.program)} <button class="key-button compact" type="button" data-action="copy" data-copy="${EVIDENCE.program}">COPY ID</button></dd><dt>CohortBuild program</dt><dd>${code(EVIDENCE.cohortBuild)} <button class="key-button compact" type="button" data-action="copy" data-copy="${EVIDENCE.cohortBuild}">COPY ID</button></dd><dt>Tests</dt><dd>Anchor local-validator adversarial flow, Rust workspace tests, Node protocol tests, bundle build, and frontend browser smoke coverage.</dd><dt>Architecture / threat model</dt><dd>${link("https://github.com/renkuror/builderloop/blob/main/docs/ARCHITECTURE.md", "Architecture")} · ${link("https://github.com/renkuror/builderloop/blob/main/docs/THREAT_MODEL.md", "Threat model")}</dd><dt>Screenshots</dt><dd>Captured fixture screenshots are stored under ${code("docs/assets/frontend/")}; no external image host is claimed.</dd><dt>Demo video</dt><dd>Not recorded. The repository contains a reproducible localnet runbook instead.</dd></dl><p class="trust-note">A local test suite is not Devnet evidence. No transaction URLs, sponsor claims, or live user metrics are fabricated.</p>`)}`;
+  const content = LIVE_DEVNET ? `<div class="detail-grid"><div><span class="metric-label">Repository</span><strong>Public GitHub</strong><p>${link("https://github.com/renkuror/builderloop", "renkuror/builderloop")}</p></div><div><span class="metric-label">Network evidence</span><strong>LIVE DEVNET</strong><p>Program, account, and finalized transaction links are public.</p></div></div><dl class="proof-list"><dt>BuilderLoop program</dt><dd>${code(PROGRAM_ID.toBase58())} ${link(explorerAddress(PROGRAM_ID.toBase58()), "EXPLORER")}</dd><dt>CohortBuild program</dt><dd>${code(COHORT_BUILD_ID.toBase58())} ${link(explorerAddress(COHORT_BUILD_ID.toBase58()), "EXPLORER")}</dd><dt>Module finalization</dt><dd>${link(DEMO.transactions.moduleFinalization.explorerUrl, "EXPLORER")}</dd><dt>Native CPI Ship</dt><dd>${link(DEMO.transactions.nativeCpiShip.explorerUrl, "EXPLORER")}</dd><dt>Fixed SPL Reward Claim</dt><dd>${link(DEMO.transactions.rewardClaimed.explorerUrl, "EXPLORER")}</dd></dl><p class="trust-note">The test mint and DEMO CONFIGURATION are public Devnet evidence, not sponsor, adoption, or Sybil-resistance claims.</p>` : `<p>Devnet evidence has not been configured.</p>`;
+  return `${panel("evidence", "Reproducible evidence", content)}`;
 }
 
 function renderRoute(route, scenario) {
@@ -147,7 +209,7 @@ function renderRoute(route, scenario) {
 }
 
 function renderFooter() {
-  return `<footer class="page-footer"><p>BUILDERLOOP / LOCALNET REFERENCE IMPLEMENTATION</p><p>Read-only fixture path first. Wallet controls remain optional and explicitly local.</p></footer>`;
+  return `<footer class="page-footer"><p>BUILDERLOOP / ${LIVE_DEVNET ? "LIVE DEVNET DEMO CONFIGURATION" : "LOCALNET REFERENCE IMPLEMENTATION"}</p><p>${LIVE_DEVNET ? "Public accounts and Explorer links are verified on Devnet. No Mainnet operation is supported." : "Read-only fixture path first. Wallet controls remain optional and explicitly local."}</p></footer>`;
 }
 
 function writeToast(message) {
@@ -227,6 +289,7 @@ function mount() {
   soundHost.append(soundButton);
   wireKeySounds(app);
   bindInteractions();
+  void refreshConfiguredDevnetState();
 }
 
 function hex(bytes) {
@@ -314,21 +377,56 @@ function writeLive(message) {
 
 async function connectWallet() {
   try {
-    if (!window.solana?.connect) throw new Error("Install or unlock a Solana wallet that exposes window.solana before using the local path.");
+    if (!window.solana?.connect) throw new Error(`Install or unlock a Solana wallet that exposes window.solana before using the ${LIVE_DEVNET ? "Devnet" : "local"} path.`);
     const response = await window.solana.connect();
     live.wallet = response.publicKey;
-    writeLive(`Connected local wallet ${live.wallet.toBase58()}. Load genuine local accounts to continue.`);
+    writeLive(`Connected wallet ${live.wallet.toBase58()}. ${LIVE_DEVNET ? "Use a Devnet wallet; the configured RPC genesis is verified before reads or a claim." : "Load genuine local accounts to continue."}`);
   } catch (error) {
     writeLive(friendlyProgramError(error));
   }
+}
+
+async function assertDevnetConnection(connection) {
+  if (!LIVE_DEVNET) return;
+  const genesis = await connection.getGenesisHash();
+  if (genesis !== DEVNET_GENESIS_HASH) throw new Error("Wallet/network mismatch: the selected RPC is not Solana Devnet.");
+}
+
+async function refreshConfiguredDevnetState() {
+  if (!LIVE_DEVNET || live.configuredState !== "idle") return;
+  live.configuredState = "loading";
+  try {
+    live.connection = new Connection(PUBLIC_CONFIG.rpcUrl, "finalized");
+    await assertDevnetConnection(live.connection);
+    const campaignKey = new PublicKey(DEMO.campaign);
+    const rewardKey = new PublicKey(DEMO.reward);
+    const progressKey = new PublicKey(DEMO.userProgress);
+    const [campaignAccount, rewardAccount, progressAccount] = await Promise.all([
+      live.connection.getAccountInfo(campaignKey, "finalized"),
+      live.connection.getAccountInfo(rewardKey, "finalized"),
+      live.connection.getAccountInfo(progressKey, "finalized"),
+    ]);
+    if (!campaignAccount || !campaignAccount.owner.equals(PROGRAM_ID)) throw new Error("Configured Devnet Campaign is missing or has the wrong owner.");
+    if (!rewardAccount || !rewardAccount.owner.equals(PROGRAM_ID)) throw new Error("Configured Devnet Reward is missing or has the wrong owner.");
+    if (!progressAccount || !progressAccount.owner.equals(PROGRAM_ID)) throw new Error("Configured Devnet UserProgress is missing or has the wrong owner.");
+    live.campaign = decodeCampaign(campaignAccount.data, campaignKey);
+    live.reward = decodeReward(rewardAccount.data, rewardKey);
+    live.demoProgress = decodeProgress(progressAccount.data, progressKey);
+    live.configuredState = "loaded";
+  } catch (error) {
+    live.configuredState = "failed";
+    live.configuredError = friendlyProgramError(error);
+  }
+  mount();
 }
 
 async function loadLiveState() {
   try {
     const rpc = $("#rpc-url")?.value.trim();
     const campaignText = $("#campaign-address")?.value.trim();
-    if (!rpc || !campaignText) throw new Error("Enter a local RPC URL and Campaign PDA before loading.");
+    if (!rpc || !campaignText) throw new Error(`Enter a ${LIVE_DEVNET ? "Devnet" : "local"} RPC URL and Campaign PDA before loading.`);
     live.connection = new Connection(rpc, "finalized");
+    await assertDevnetConnection(live.connection);
     const campaignKey = new PublicKey(campaignText);
     const account = await live.connection.getAccountInfo(campaignKey, "finalized");
     if (!account || !account.owner.equals(PROGRAM_ID)) throw new Error("Campaign account is missing or belongs to a different program.");
@@ -337,7 +435,7 @@ async function loadLiveState() {
     const rewardText = $("#reward-address")?.value.trim();
     if (rewardText) await loadLiveReward(new PublicKey(rewardText));
     const progressSummary = live.progress ? ` UserProgress: ${stages[live.progress.stage] ?? "Unknown"}.` : " No UserProgress loaded for the connected wallet.";
-    writeLive(`Verified Campaign ${live.campaign.campaignId.toString()} at local validator. ${progressSummary}`);
+    writeLive(`Verified Campaign ${live.campaign.campaignId.toString()} on ${LIVE_DEVNET ? "Devnet" : "the local validator"}. ${progressSummary}`);
     updateClaimButton();
   } catch (error) {
     writeLive(`${friendlyProgramError(error)} Raw: ${String(error?.message ?? error)}`);
@@ -376,7 +474,8 @@ function updateClaimButton() {
 
 async function claimReward() {
   try {
-    if (!live.wallet || !live.connection || !live.campaign || !live.progress || !live.reward) throw new Error("Connect a wallet and load an eligible local Campaign, UserProgress, and Reward first.");
+    if (!live.wallet || !live.connection || !live.campaign || !live.progress || !live.reward) throw new Error(`Connect a wallet and load an eligible ${LIVE_DEVNET ? "Devnet" : "local"} Campaign, UserProgress, and Reward first.`);
+    await assertDevnetConnection(live.connection);
     const recipient = new PublicKey($("#recipient-address")?.value.trim());
     const recipientBefore = await validateRecipientTokenAccount(recipient);
     const [claim] = PublicKey.findProgramAddressSync([Buffer.from("claim"), live.reward.address.toBuffer(), live.wallet.toBuffer()], PROGRAM_ID);
@@ -425,7 +524,7 @@ async function claimReward() {
       },
     });
     const result = await flow.run();
-    writeLive(`Verified Claim PDA and recipient balance from local account state. Local signature: ${result.signature}`);
+    writeLive(`Verified Claim PDA and recipient balance from ${LIVE_DEVNET ? "Devnet" : "local"} account state. Signature: ${result.signature}`);
     await loadLiveState();
   } catch (error) {
     writeLive(`${friendlyProgramError(error)} Raw: ${String(error?.message ?? error)} Retry after correcting the local account state.`);

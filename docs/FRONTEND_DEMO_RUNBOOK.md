@@ -1,5 +1,7 @@
 # BuilderLoop Frontend Demo Runbook
 
+> Historical local-fixture recording runbook. The current real-transaction Devnet demo is documented in [docs/DEVNET_RUNBOOK.md](DEVNET_RUNBOOK.md) and [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md).
+
 ## Recording status
 
 This is a runbook, not recording evidence. **Fixture screenshots were captured from the final local build on 2026-08-06; a demo video remains unrecorded.** The public judge path is a prepared read-only local fixture and must retain the exact label **DEMO FIXTURE — NOT LIVE** throughout recording.

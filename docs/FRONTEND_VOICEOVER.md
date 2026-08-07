@@ -1,5 +1,7 @@
 # BuilderLoop Frontend Voiceover Guide
 
+> Historical fixture voiceover guide. For the current public Devnet release, use [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md) and [docs/DEVNET_RUNBOOK.md](DEVNET_RUNBOOK.md).
+
 ## Read-this-first disclosure
 
 These lines are approved only for the current localnet/fixture evidence posture. **Devnet deployment and Devnet transaction links have not been produced.** Do not replace **DEMO FIXTURE — NOT LIVE** with a softer phrase, and do not narrate a fixture control as a signature, transfer, or public confirmation.

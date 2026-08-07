@@ -1,6 +1,6 @@
-# Localnet Deployment
+# Localnet and Devnet Deployment
 
-Devnet and mainnet are deliberately excluded. Never change the provider cluster for release evidence.
+Mainnet is absolutely forbidden. Localnet regression remains available below; the public Devnet flow is documented in `docs/DEVNET_RUNBOOK.md`.
 
 ```sh
 solana --version

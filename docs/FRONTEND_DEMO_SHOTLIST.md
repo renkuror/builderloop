@@ -1,5 +1,7 @@
 # BuilderLoop Frontend Demo Shotlist
 
+> Historical local-fixture shotlist captured before Devnet deployment. Current public Devnet proof is in [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md); these frames must not be relabeled as Devnet evidence.
+
 ## Capture status
 
 The first eleven rows below are actual local-build screenshots captured on 2026-08-06. They are fixture views, not live transactions or Devnet evidence. No demo video has been recorded. The optional local-validator row remains deliberately uncaptured because no wallet or local account values were fabricated.

@@ -15,17 +15,14 @@ test.describe("BuilderLoop mechanical-manga frontend", () => {
     test(`renders ${route}`, async ({ page }) => {
       await page.goto(route);
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
-      await expect(page.getByText("DEMO FIXTURE — NOT LIVE")).toBeVisible();
+      await expect(page.getByText("LIVE DEVNET")).toBeVisible();
     });
   }
 
-  test("communicates the locked early-Ship path without signing", async ({ page }) => {
-    await page.goto("/demo/?scenario=shipped");
-    await page.getByRole("button", { name: "Early Ship rejection" }).click();
-
-    await expect(page).toHaveURL(/scenario=early-ship/);
-    await expect(page.getByText(/Ship rejected because the 120-second elapsed-time gate/)).toBeVisible();
-    await expect(page.getByText(/Fixture controls do not sign, submit, or claim/)).toBeVisible();
+  test("exposes genuine Devnet proof links without signing", async ({ page }) => {
+    await page.goto("/demo/");
+    await expect(page.getByRole("link", { name: "VIEW TX" }).first()).toHaveAttribute("href", /cluster=devnet/);
+    await expect(page.getByText(/short gates exist only for this public demonstration/)).toBeVisible();
   });
 
   test("keeps the CTA keyboard focusable and the sound control operable", async ({ page }) => {
