@@ -105,4 +105,4 @@ idle → awaiting wallet signature → submitted → confirming → finalized
 → refetching accounts → verified from account state
 ```
 
-Fixture playback is not that sequence. It must retain **DEMO FIXTURE — NOT LIVE**, avoid Explorer links and fabricated signatures, and describe its outcomes as prepared scenarios. Current repository evidence is localnet only; Devnet evidence has not been produced.
+Fixture playback is not that sequence. It must retain **DEMO FIXTURE — NOT LIVE**, avoid Explorer links and fabricated signatures, and describe its outcomes as prepared scenarios. The historical fixture materials in this document are not the current public Devnet evidence; see [PUBLIC_RELEASE_AUDIT.md](../PUBLIC_RELEASE_AUDIT.md).

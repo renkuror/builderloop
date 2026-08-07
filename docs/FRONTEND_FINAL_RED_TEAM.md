@@ -4,9 +4,9 @@
 
 ## Purpose and current constraint
 
-This review covers the final local build, actual fixture screenshots captured on 2026-08-06, unit checks, and browser E2E checks. **Current review status: frontend checks passed; demo recording and Devnet evidence remain pending.** This document does not certify a Devnet submission.
+This review covers the final local build, actual fixture screenshots captured on 2026-08-06, unit checks, and browser E2E checks. **Historical review status: frontend checks passed at the fixture checkpoint.** This document does not certify the current public release; see [PUBLIC_RELEASE_AUDIT.md](../PUBLIC_RELEASE_AUDIT.md).
 
-The central evidence constraint is already known: the repository has localnet-only evidence. **Devnet deployment, Devnet program addresses, and Devnet transaction links have not been produced.** For the stated Superteam Poland challenge, that is a material submission gap, not a cosmetic documentation issue.
+The central evidence constraint applied at that checkpoint: the repository had localnet-only evidence. The current Devnet deployment, program addresses, and transaction links are audited separately in [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md).
 
 ## Bounty judge review
 
@@ -63,4 +63,4 @@ The central evidence constraint is already known: the repository has localnet-on
 | `NOT READY FOR BOUNTY EVIDENCE` | Any blocking red flag exists, including absent Devnet deployment or transaction links where the challenge requires them. |
 | `READY FOR DEVNET-CLAIMED SUBMISSION` | Only after real Devnet deployment, real public program addresses, real transaction links, and a re-recorded/re-reviewed client evidence path exist. |
 
-The appropriate frontend decision is **READY FOR LOCALNET DEMO**. The appropriate evidence decision remains **NOT READY FOR BOUNTY EVIDENCE** because Devnet proof has not been produced. This is not a statement about code quality or localnet behavior; it is a truthful boundary on what the available evidence supports.
+At the historical checkpoint, the appropriate frontend decision was **READY FOR LOCALNET DEMO** and the evidence decision was **NOT READY FOR BOUNTY EVIDENCE** because Devnet proof had not yet been produced. This is not a statement about current public evidence; see [PUBLIC_RELEASE_AUDIT.md](../PUBLIC_RELEASE_AUDIT.md).

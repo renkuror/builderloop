@@ -2,7 +2,7 @@
 
 ## Current
 
-- Playwright browser smoke is blocked on this host: the pinned Chromium headless-shell executable is missing from `/home/user/.cache/ms-playwright`, and the package installer exits without populating it. The production bundle, JavaScript CI, and source-level frontend checks pass; no browser result is represented as green.
+- Browser-only production smoke is blocked on this host: repeated install attempts left no usable Chromium executable, so all 10 `PUBLIC_FRONTEND_URL` tests failed before assertions because `/home/user/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell` is missing. The default local-server run also returned `EPERM` while binding `127.0.0.1:4173`. Public HTTPS route, bundle, documentation-link, Devnet, and source checks pass; no browser result is represented as green.
 - No Devnet protocol blocker remains. Both programs, the real demo lifecycle, public evidence verification, and localnet regression pass.
 - Production Vercel promotion remains an owner-side merge/deploy action; the live public site still serves the pre-merge build.
 

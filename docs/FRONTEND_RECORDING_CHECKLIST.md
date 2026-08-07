@@ -4,7 +4,7 @@
 
 ## Status and stop condition
 
-**Screenshot capture is complete; recording is pending.** Do not mark this checklist complete until the actual recording exists. Current evidence is localnet only; Devnet deployment and transaction links are an open, material bounty-evidence gap.
+**Screenshot capture is complete; recording is pending.** Do not mark this historical checklist complete until the actual recording exists. Its fixture evidence is superseded by the current public release record in [PUBLIC_RELEASE_AUDIT.md](../PUBLIC_RELEASE_AUDIT.md).
 
 ## Before recording
 
@@ -40,7 +40,7 @@
 - [ ] Record `/reward/?scenario=claimed` and duplicate-claim rule.
 - [ ] Record `/campaign/` frozen configuration/trust disclosure.
 - [ ] Record `/architecture/` static CPI blueprint.
-- [ ] Record `/evidence/` localnet-only/Devnet-not-produced disclosure.
+- [ ] Record the historical `/evidence/` localnet-only/Devnet-not-produced disclosure only when documenting the fixture checkpoint; use [PUBLIC_RELEASE_AUDIT.md](../PUBLIC_RELEASE_AUDIT.md) for the current release.
 - [ ] Record an optional **LIVE LOCAL VALIDATOR** segment only if genuine local accounts and the compatible wallet are available.
 
 ## Evidence hygiene
@@ -56,4 +56,4 @@
 - [ ] The recording matches `FRONTEND_DEMO_SCRIPT_90S.md` or `FRONTEND_DEMO_SCRIPT_3MIN.md` exactly enough that its claims remain true.
 - [ ] `FRONTEND_MANUAL_QA.md` and `FRONTEND_FINAL_RED_TEAM.md` have been completed against the final build.
 - [ ] Devnet evidence status is stated plainly in the recording and final submission materials.
-- [ ] If Devnet deployment/transaction links are still unavailable, the submission is not represented as satisfying that challenge requirement.
+- [ ] At the historical checkpoint, if Devnet deployment/transaction links were unavailable, the submission was not represented as satisfying that challenge requirement.

@@ -6,7 +6,7 @@
 
 The first eleven rows below are actual local-build screenshots captured on 2026-08-06. They are fixture views, not live transactions or Devnet evidence. No demo video has been recorded. The optional local-validator row remains deliberately uncaptured because no wallet or local account values were fabricated.
 
-All fixture frames visibly show **DEMO FIXTURE — NOT LIVE**. Any optional connected frame must visibly show **LIVE LOCAL VALIDATOR**. Current repository evidence is localnet only; no frame may be labeled Devnet.
+All fixture frames visibly show **DEMO FIXTURE — NOT LIVE**. Any optional connected frame must visibly show **LIVE LOCAL VALIDATOR**. These historical frames are localnet-only and must not be relabeled as current Devnet evidence.
 
 | # | Actual filename | Route / prepared state | Required visual proof | Capture status |
 | ---: | --- | --- | --- | --- |

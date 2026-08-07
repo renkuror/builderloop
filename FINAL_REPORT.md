@@ -2,7 +2,7 @@
 
 ## Status
 
-The original localnet MVP is complete. The public Devnet release is now tracked in [DEVNET_RELEASE_REPORT.md](DEVNET_RELEASE_REPORT.md); Mainnet remains absolutely forbidden.
+The localnet MVP and public Devnet release are complete. The production frontend is [builderloop-tan.vercel.app](https://builderloop-tan.vercel.app); the release audit is tracked in [PUBLIC_RELEASE_AUDIT.md](PUBLIC_RELEASE_AUDIT.md) and [DEVNET_RELEASE_REPORT.md](DEVNET_RELEASE_REPORT.md). Mainnet remains absolutely forbidden.
 
 ## Completed work packages
 
@@ -46,7 +46,7 @@ The original localnet MVP is complete. The public Devnet release is now tracked 
 | `cargo test --workspace` | PASS | 7 Rust unit/vector tests including program IDs |
 | `anchor build` | PASS | BuilderLoop and CohortBuild SBF/IDL artifacts |
 | `anchor test --skip-build` | PASS | Real local validator; Ed25519, receipt, CPI, SPL, pause/replay/epoch/withdraw/close adversarial flow |
-| `pnpm run ci` | PASS | 16 Node tests, format/lint/typecheck/build and production frontend bundle |
+| `pnpm run ci` | PASS | 27 Node tests, format/lint/typecheck/build and production frontend bundle |
 | `pnpm evidence` | PASS | Local/test-only artifacts regenerated |
 | `pnpm secrets` | PASS | Ignored validator/build sockets and artifacts excluded; no finding |
 
@@ -73,6 +73,7 @@ The validator test creates ephemeral real accounts and transitions Module pendin
 
 - Verified in `deployments/devnet.json`, `evidence/devnet-addresses.json`, and `evidence/transaction-links.json`.
 - The real public lifecycle includes Module finalization, native CPI Ship, and fixed SPL Claim links. See `DEVNET_RELEASE_REPORT.md`.
+- The production frontend exposes the same real evidence at `https://builderloop-tan.vercel.app/evidence/`.
 
 ## External blockers
 
@@ -83,7 +84,7 @@ The validator test creates ephemeral real accounts and transitions Module pendin
 
 - One fixed campaign topology, verifier, source, and reward authority; no generic builder or verifier registry.
 - Trusted verifier and configured source semantics remain explicit trust boundaries.
-- Browser wallet behavior is production-bundled and smoke-checked; extension UI automation is not part of the local headless suite.
+- Browser wallet behavior is production-bundled and source-checked; extension UI automation and browser console inspection were unavailable during the public audit because the pinned Chromium executable could not be installed.
 - Local validator transaction signatures are ephemeral and intentionally not presented as durable explorer evidence.
 
 ## Exact next commands
@@ -110,7 +111,7 @@ pnpm secrets
 ## 2026-08-06 frontend evidence update
 
 - Added the Mechanical Manga judge frontend across seven direct routes, deterministic fixture states, an optional local-validator wallet path, and 11 actual fixture screenshots under `docs/assets/frontend/`.
-- Green in this Windows host: `pnpm run ci` (27 Node tests), `pnpm frontend:build`, `pnpm playwright test` (10 browser tests), `sh scripts/verify-frontend.sh`, `pnpm secrets`, `pnpm audit --prod`, and `cargo fmt --check`.
+- Historical 2026-08-06 Windows checkpoint: `pnpm run ci` (27 Node tests), `pnpm frontend:build`, `pnpm playwright test` (10 browser tests), `sh scripts/verify-frontend.sh`, `pnpm secrets`, `pnpm audit --prod`, and `cargo fmt --check` were recorded there. The 2026-08-08 public audit separately records current Linux/Devnet results and the current browser limitation.
 - Current Windows toolchain limitation: `anchor` is not installed; Cargo custom build scripts fail to execute with `os error 5`; and no local validator/provider is configured. These current-host failures do not replace the historical localnet evidence above and are not reported as green.
 - The frontend claims Devnet only when the checked-in deployment status is `deployed`; it never claims sponsor activity, Sybil resistance, retention, or a recorded video.
 
