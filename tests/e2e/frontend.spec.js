@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 
 const routes = [
-  ["/", "Points cannot substitute for return."],
-  ["/demo/", "Prepared proof path — no wallet required"],
-  ["/campaign/", "Frozen campaign configuration"],
-  ["/progress/", "Wallet-bound progress"],
-  ["/reward/", "Fixed reward settlement"],
-  ["/architecture/", "Native CPI and settlement blueprint"],
+  ["/", "Loyalty should move at the speed of the product."],
+  ["/demo/", /Live Heartbeat Loyalty proof|Heartbeat Devnet evidence pending|Heartbeat Loyalty fixture — not live/],
+  ["/campaign/", /Fixed project heartbeat policy|Frozen campaign configuration/],
+  ["/progress/", /Project Heartbeat|Wallet-bound loyalty state/],
+  ["/reward/", /Loyalty-gated fixed SPL reward|Fixed reward settlement/],
+  ["/architecture/", "Heartbeat loyalty architecture"],
   ["/evidence/", "Reproducible evidence"],
 ];
 
@@ -19,15 +19,19 @@ test.describe("BuilderLoop mechanical-manga frontend", () => {
     });
   }
 
-  test("exposes genuine Devnet proof links without signing", async ({ page }) => {
-    await page.goto("/demo/");
-    await expect(page.getByRole("link", { name: "VIEW TX" }).first()).toHaveAttribute("href", /cluster=devnet/);
-    await expect(page.getByText(/short gates exist only for this public demonstration/)).toBeVisible();
+test("never represents an unavailable loyalty fixture as live", async ({ page }) => {
+  await page.goto("/demo/");
+  const links = page.getByRole("link", { name: "VIEW TX" });
+  if (await links.count()) {
+    await expect(links.first()).toHaveAttribute("href", /cluster=devnet/);
+  } else {
+    await expect(page.getByText("DEMO FIXTURE — NOT LIVE")).toBeVisible();
+  }
   });
 
   test("keeps the CTA keyboard focusable and the sound control operable", async ({ page }) => {
     await page.goto("/");
-    const cta = page.getByRole("link", { name: "OPEN JUDGE DEMO" });
+    const cta = page.getByRole("link", { name: "OPEN HEARTBEAT DEMO" });
     await cta.focus();
     await expect(cta).toBeFocused();
 
@@ -47,6 +51,6 @@ test.describe("BuilderLoop mechanical-manga frontend", () => {
     }));
 
     expect(width.document).toBeLessThanOrEqual(width.viewport);
-    await expect(page.getByRole("heading", { name: "Points cannot substitute for return." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Loyalty should move at the speed of the product." })).toBeVisible();
   });
 });

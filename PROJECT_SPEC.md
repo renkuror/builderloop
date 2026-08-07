@@ -1,8 +1,10 @@
-# BuilderLoop MVP Technical Specification
+# BuilderLoop Reference Adapter Specification
+
+> Status: preserved reference flow. BuilderLoop’s primary product is now the additive Heartbeat Loyalty MVP documented in [docs/HEARTBEAT_LOYALTY.md](docs/HEARTBEAT_LOYALTY.md). This file remains authoritative for the legacy Module → Return → Ship → Reward accounts and invariants; it is not a statement that the legacy flow is the whole product.
 
 ## 1. Product
 
-BuilderLoop is a campaign-specific retention eligibility program for one Solana builder cohort.
+This document specifies the campaign-specific CohortBuild reference adapter retained by BuilderLoop.
 
 Core flow:
 

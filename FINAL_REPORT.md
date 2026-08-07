@@ -113,3 +113,7 @@ pnpm secrets
 - Green in this Windows host: `pnpm run ci` (27 Node tests), `pnpm frontend:build`, `pnpm playwright test` (10 browser tests), `sh scripts/verify-frontend.sh`, `pnpm secrets`, `pnpm audit --prod`, and `cargo fmt --check`.
 - Current Windows toolchain limitation: `anchor` is not installed; Cargo custom build scripts fail to execute with `os error 5`; and no local validator/provider is configured. These current-host failures do not replace the historical localnet evidence above and are not reported as green.
 - The frontend claims Devnet only when the checked-in deployment status is `deployed`; it never claims sponsor activity, Sybil resistance, retention, or a recorded video.
+
+## 2026-08-08 Heartbeat Loyalty MVP
+
+Additive immutable Heartbeat Loyalty policy/state/receipt/reward-gate PDAs are implemented and deployed on Devnet with real public evidence. The original CohortBuild reference flow remains intact. See `HEARTBEAT_RELEASE_REPORT.md` for current IDs, transactions, checks, and the remaining production-promotion limitation.

@@ -69,5 +69,55 @@
       "address": "58pvBJsKNa1gWK4EdA5s5DJDA9dbkUWu1vpE2AZUCX3w",
       "explorerUrl": "https://explorer.solana.com/address/58pvBJsKNa1gWK4EdA5s5DJDA9dbkUWu1vpE2AZUCX3w?cluster=devnet"
     }
+  },
+  "heartbeat": {
+    "campaign": {
+      "address": "4RUY9TDYkW25yLDsQe6X4JDJiWc51jDiAwGAKYTR9WLT",
+      "explorerUrl": "https://explorer.solana.com/address/4RUY9TDYkW25yLDsQe6X4JDJiWc51jDiAwGAKYTR9WLT?cluster=devnet"
+    },
+    "loyaltyConfig": {
+      "address": "7Szb6pAR42dq3yuwuhiEQoKLPWbTDhW2uLkq6mVccGkE",
+      "explorerUrl": "https://explorer.solana.com/address/7Szb6pAR42dq3yuwuhiEQoKLPWbTDhW2uLkq6mVccGkE?cluster=devnet"
+    },
+    "user": {
+      "address": "CrjgeEe8Vb3n4RX7BtgRwtrUfdximUV9gaHZcS8c4RBm",
+      "explorerUrl": "https://explorer.solana.com/address/CrjgeEe8Vb3n4RX7BtgRwtrUfdximUV9gaHZcS8c4RBm?cluster=devnet"
+    },
+    "loyaltyState": {
+      "address": "FsPtJM452w4FTxdvCUiGf5xfwG3JfFeAhcH2Lcb9WhgN",
+      "explorerUrl": "https://explorer.solana.com/address/FsPtJM452w4FTxdvCUiGf5xfwG3JfFeAhcH2Lcb9WhgN?cluster=devnet"
+    },
+    "firstActivityReceipt": {
+      "address": "6jE322TFbnULSciMNfQsH4hcMndk47MFZ1VVbPHe37k3",
+      "explorerUrl": "https://explorer.solana.com/address/6jE322TFbnULSciMNfQsH4hcMndk47MFZ1VVbPHe37k3?cluster=devnet"
+    },
+    "secondActivityReceipt": {
+      "address": "6WUBtBtKMP2awg8ACfkTLHbrm1rzirzqtJUwNeUYFDqT",
+      "explorerUrl": "https://explorer.solana.com/address/6WUBtBtKMP2awg8ACfkTLHbrm1rzirzqtJUwNeUYFDqT?cluster=devnet"
+    },
+    "reward": {
+      "address": "8DRLdGdCbVSpbpi8FTTHbWJuhCiaTpA6DA2H7HPgfwDD",
+      "explorerUrl": "https://explorer.solana.com/address/8DRLdGdCbVSpbpi8FTTHbWJuhCiaTpA6DA2H7HPgfwDD?cluster=devnet"
+    },
+    "loyaltyRewardGate": {
+      "address": "7seDDL9FaTkpM1gYRGtVYvqoChqFQQzfGYWQy6XuCydw",
+      "explorerUrl": "https://explorer.solana.com/address/7seDDL9FaTkpM1gYRGtVYvqoChqFQQzfGYWQy6XuCydw?cluster=devnet"
+    },
+    "rewardVault": {
+      "address": "rMjyaJunBm7J4HmcTptqNutFuPFwLn2dSspEmdod84a",
+      "explorerUrl": "https://explorer.solana.com/address/rMjyaJunBm7J4HmcTptqNutFuPFwLn2dSspEmdod84a?cluster=devnet"
+    },
+    "mint": {
+      "address": "B1iAkPVXdwxZxyseTofKZx8q7Azzy3DSGCbCKMZe2Mzi",
+      "explorerUrl": "https://explorer.solana.com/address/B1iAkPVXdwxZxyseTofKZx8q7Azzy3DSGCbCKMZe2Mzi?cluster=devnet"
+    },
+    "recipient": {
+      "address": "5aU19aWRbPQjqX5H2aEKy2dFarJFJwLHsXh5LianEtXM",
+      "explorerUrl": "https://explorer.solana.com/address/5aU19aWRbPQjqX5H2aEKy2dFarJFJwLHsXh5LianEtXM?cluster=devnet"
+    },
+    "claim": {
+      "address": "9ypHDZ1rSZNQ69yNdcAJX2iraBXM4msqWHP8GidJejjn",
+      "explorerUrl": "https://explorer.solana.com/address/9ypHDZ1rSZNQ69yNdcAJX2iraBXM4msqWHP8GidJejjn?cluster=devnet"
+    }
   }
 }

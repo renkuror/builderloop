@@ -1,6 +1,6 @@
 export const ROUTES = Object.freeze([
   { path: "/", label: "Overview", id: "overview" },
-  { path: "/demo", label: "Judge demo", id: "demo" },
+  { path: "/demo", label: "Heartbeat demo", id: "demo" },
   { path: "/campaign", label: "Campaign", id: "campaign" },
   { path: "/progress", label: "Progress", id: "progress" },
   { path: "/reward", label: "Reward", id: "reward" },

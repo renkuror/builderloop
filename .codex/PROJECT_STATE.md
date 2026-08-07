@@ -61,3 +61,7 @@ The pre-existing JavaScript model remains only a parity/reference layer. Complet
 - Integration: `tests/anchor/localnet.test.js`
 - Client/CLI: `web/`, `cli/builderloop.js`
 - Evidence/docs: `evidence/`, `docs/`, `DEPLOY.md`, `FINAL_REPORT.md`
+
+## 2026-08-08 — Heartbeat Loyalty MVP
+
+Implemented additive immutable Heartbeat Loyalty PDAs and a loyalty-gated SPL reward consumer. The existing Module → Return → Ship → Reward path remains unchanged. BuilderLoop was upgraded on Devnet at the existing program ID; public Devnet evidence and verification scripts are recorded in `HEARTBEAT_RELEASE_REPORT.md`.

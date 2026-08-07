@@ -34,3 +34,9 @@
 - Keep `Anchor.toml` localnet provider defaults for regression, add explicit `[programs.devnet]` identities, and pass `--provider.cluster devnet` plus the external fee payer on every deployment command.
 - `deployments/devnet.json` and evidence files contain only public addresses/signatures. Ephemeral demo role secrets are generated in memory and never written.
 - `scripts/export-evidence.js` preserves real Devnet evidence rather than replacing it with localnet placeholders.
+
+## 2026-08-08: Heartbeat Loyalty MVP
+
+- Keep Heartbeat Loyalty additive: immutable `LoyaltyConfig`, per-wallet `LoyaltyState`, replay-resistant `ActivityReceipt`, and `LoyaltyRewardGate` PDAs leave deployed CampaignConfig/UserProgress layouts and old reward semantics intact.
+- Use verifier-signed, domain-separated activity attestations and a minimum return interval; repeated same-window activity rejects rather than farming score.
+- Use O(1) Clock-derived lazy decay and immutable policy epoch 1. Adaptive heartbeat updates remain roadmap-only.

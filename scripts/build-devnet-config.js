@@ -15,6 +15,7 @@ const config = {
   builderloopProgramId: process.env.PUBLIC_BUILDERLOOP_PROGRAM_ID ?? deployment.programs?.builderloop?.address ?? DEFAULT_BUILDERLOOP,
   cohortBuildProgramId: process.env.PUBLIC_COHORTBUILD_PROGRAM_ID ?? deployment.programs?.cohortBuild?.address ?? DEFAULT_COHORT_BUILD,
   demo: deployment.demo?.status === "complete" ? deployment.demo : null,
+  heartbeatDemo: deployment.heartbeatDemo?.status === "complete" ? deployment.heartbeatDemo : null,
 };
 
 if (!config.rpcUrl.startsWith("https://")) throw new Error("PUBLIC_SOLANA_RPC_URL must use HTTPS.");
