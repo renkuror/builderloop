@@ -2,4 +2,4 @@
 
 The campaign authority freezes eligibility. The Module verifier signs one fixed attestation domain. The reward authority funds and controls a fixed SPL payout lifecycle. Users sign their own Ship and claim actions.
 
-The local fixture authorities are test labels only. No independent sponsor, Devnet deployment, or live payout evidence is asserted.
+Local fixture authorities remain test labels. The Devnet DEMO CONFIGURATION has public deployment, account, and payout evidence; no independent sponsor, Sybil-resistance, or organic-retention claim is asserted.

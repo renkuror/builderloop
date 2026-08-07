@@ -1,4 +1,73 @@
 {
-  "status": "not-produced",
-  "reason": "Devnet is explicitly excluded; localnet only."
+  "schemaVersion": 1,
+  "status": "deployed",
+  "cluster": "devnet",
+  "programs": {
+    "builderloop": {
+      "address": "3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2",
+      "deploymentSignature": "4QAkx52MevfydGHKPSNcVEqXNGvdPpTZRYwkN9AJKC6WKTEvEBZXpxnKPhig6nuRwdftXT1S7tihBbMFVra9tpTm",
+      "explorerUrl": "https://explorer.solana.com/address/3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2?cluster=devnet",
+      "deploymentExplorerUrl": "https://explorer.solana.com/tx/4QAkx52MevfydGHKPSNcVEqXNGvdPpTZRYwkN9AJKC6WKTEvEBZXpxnKPhig6nuRwdftXT1S7tihBbMFVra9tpTm?cluster=devnet"
+    },
+    "cohortBuild": {
+      "address": "BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF",
+      "deploymentSignature": "64AogE32ADR79sLxT8c1HUey8xsnVVBsaqBY9yagac3fQB9RNGwKyE16znpXWJ15LS5PAj4VUho6qSQdN4KA9hqu",
+      "explorerUrl": "https://explorer.solana.com/address/BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF?cluster=devnet",
+      "deploymentExplorerUrl": "https://explorer.solana.com/tx/64AogE32ADR79sLxT8c1HUey8xsnVVBsaqBY9yagac3fQB9RNGwKyE16znpXWJ15LS5PAj4VUho6qSQdN4KA9hqu?cluster=devnet"
+    }
+  },
+  "addresses": {
+    "campaign": {
+      "address": "G5NZMxbV5xgnYS2dxLBDJGAZTigMJQaH8c73tSswLLHb",
+      "explorerUrl": "https://explorer.solana.com/address/G5NZMxbV5xgnYS2dxLBDJGAZTigMJQaH8c73tSswLLHb?cluster=devnet"
+    },
+    "user": {
+      "address": "FbrhfV5PXc9jP8zDvG5JtfWBu44cTkSsZqaBDAdyppsp",
+      "explorerUrl": "https://explorer.solana.com/address/FbrhfV5PXc9jP8zDvG5JtfWBu44cTkSsZqaBDAdyppsp?cluster=devnet"
+    },
+    "userProgress": {
+      "address": "7JS9WDvbHjKukzrrufTjTsRLbxEhqXVusJNFbPvBNAjW",
+      "explorerUrl": "https://explorer.solana.com/address/7JS9WDvbHjKukzrrufTjTsRLbxEhqXVusJNFbPvBNAjW?cluster=devnet"
+    },
+    "moduleReceipt": {
+      "address": "2HRNUxio75GYJ23epKj5bpFewUJcfyq6bFt3L9Ac1bFC",
+      "explorerUrl": "https://explorer.solana.com/address/2HRNUxio75GYJ23epKj5bpFewUJcfyq6bFt3L9Ac1bFC?cluster=devnet"
+    },
+    "challenge": {
+      "address": "58Pb7PPaAXUhjGMDaqYprjnjBgeGhKieRxMjBessFsYh",
+      "explorerUrl": "https://explorer.solana.com/address/58Pb7PPaAXUhjGMDaqYprjnjBgeGhKieRxMjBessFsYh?cluster=devnet"
+    },
+    "buildSubmission": {
+      "address": "3w2tSDoYtzJCnTW9Q5iaLzVMBZ6QKRW9PNTyxEUNch1t",
+      "explorerUrl": "https://explorer.solana.com/address/3w2tSDoYtzJCnTW9Q5iaLzVMBZ6QKRW9PNTyxEUNch1t?cluster=devnet"
+    },
+    "completion": {
+      "address": "J8peFs6agMJh3nhcsMKv2gcoe99tkikETq898SuK92kc",
+      "explorerUrl": "https://explorer.solana.com/address/J8peFs6agMJh3nhcsMKv2gcoe99tkikETq898SuK92kc?cluster=devnet"
+    },
+    "sourceAuthority": {
+      "address": "ANdnSY5s7cpThhZMMgRe8icLHd1fmQVvKTbBV2nanZtE",
+      "explorerUrl": "https://explorer.solana.com/address/ANdnSY5s7cpThhZMMgRe8icLHd1fmQVvKTbBV2nanZtE?cluster=devnet"
+    },
+    "reward": {
+      "address": "7LkFHiirvkQXUQHpUtGDqLpPaMw5CrBVnEEp6ifZRBpB",
+      "explorerUrl": "https://explorer.solana.com/address/7LkFHiirvkQXUQHpUtGDqLpPaMw5CrBVnEEp6ifZRBpB?cluster=devnet"
+    },
+    "rewardVault": {
+      "address": "HS3DMEL9EuBpzNYDzDWbWwKY4bPX22WyFdRR87xdV9KH",
+      "explorerUrl": "https://explorer.solana.com/address/HS3DMEL9EuBpzNYDzDWbWwKY4bPX22WyFdRR87xdV9KH?cluster=devnet"
+    },
+    "mint": {
+      "address": "FLHwwyaMZLnuRX7Upph219rjDFXUGtudZixYUKf7TBmb",
+      "explorerUrl": "https://explorer.solana.com/address/FLHwwyaMZLnuRX7Upph219rjDFXUGtudZixYUKf7TBmb?cluster=devnet"
+    },
+    "recipient": {
+      "address": "HfagYvBGY1JVvXkNYQNe9ZUVqMqpnc5f78sjmMvFg6b2",
+      "explorerUrl": "https://explorer.solana.com/address/HfagYvBGY1JVvXkNYQNe9ZUVqMqpnc5f78sjmMvFg6b2?cluster=devnet"
+    },
+    "claim": {
+      "address": "58pvBJsKNa1gWK4EdA5s5DJDA9dbkUWu1vpE2AZUCX3w",
+      "explorerUrl": "https://explorer.solana.com/address/58pvBJsKNa1gWK4EdA5s5DJDA9dbkUWu1vpE2AZUCX3w?cluster=devnet"
+    }
+  }
 }

@@ -1,5 +1,7 @@
 # BuilderLoop Frontend Bounty Brief
 
+> Historical localnet/fixture checkpoint. The current public Devnet release is documented in [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md); the status statements below describe the earlier checkpoint and are not the current deployment status.
+
 ## Submission context
 
 BuilderLoop is being prepared for the official Superteam Poland **On-Chain Loyalty Rewards System Challenge**. The public listing names a deadline of **2026-08-07T21:59:59Z**. This brief records the facts that govern the frontend and its evidence; it is not a claim that a submission has been completed.

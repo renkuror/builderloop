@@ -27,3 +27,10 @@
 - Treat fixture transitions as illustration only. The genuine local Claim path exposes transaction states through finalized account refetch and verification before it reports success.
 - Use the repository-local `.pnpm-store` so the workspace retains one reproducible pnpm link target. Exclude that generated dependency cache from the secret scanner just as `node_modules` is excluded; source and documentation remain scanned.
 - Playwright uses its normal managed browser when installed. The config can use an already-present local Chromium cache only as a development fallback after an interrupted headless-shell download; it does not change the test behavior or claim production browser evidence.
+
+## 2026-08-07: Devnet release identities and evidence
+
+- Reuse the audited BuilderLoop and CohortBuild program IDs on Devnet. The source `declare_id!`, `anchor keys list`, generated keypair public keys, IDLs, and CohortBuild CPI target all agree; regenerating IDs would change the voucher domain and is unnecessary.
+- Keep `Anchor.toml` localnet provider defaults for regression, add explicit `[programs.devnet]` identities, and pass `--provider.cluster devnet` plus the external fee payer on every deployment command.
+- `deployments/devnet.json` and evidence files contain only public addresses/signatures. Ephemeral demo role secrets are generated in memory and never written.
+- `scripts/export-evidence.js` preserves real Devnet evidence rather than replacing it with localnet placeholders.

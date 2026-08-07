@@ -1,5 +1,7 @@
 # BuilderLoop Frontend Recording Checklist
 
+> Historical recording checklist for the local fixture checkpoint. Current Devnet status and public proof are documented in [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md).
+
 ## Status and stop condition
 
 **Screenshot capture is complete; recording is pending.** Do not mark this checklist complete until the actual recording exists. Current evidence is localnet only; Devnet deployment and transaction links are an open, material bounty-evidence gap.

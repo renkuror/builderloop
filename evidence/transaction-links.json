@@ -1,4 +1,97 @@
 {
-  "status": "not-produced",
-  "reason": "No Devnet transactions were performed; ephemeral local signatures are not durable explorer evidence."
+  "schemaVersion": 1,
+  "status": "deployed",
+  "cluster": "devnet",
+  "transactions": {
+    "builderloopDeployment": {
+      "label": "Deploy BuilderLoop",
+      "signature": "4QAkx52MevfydGHKPSNcVEqXNGvdPpTZRYwkN9AJKC6WKTEvEBZXpxnKPhig6nuRwdftXT1S7tihBbMFVra9tpTm",
+      "explorerUrl": "https://explorer.solana.com/tx/4QAkx52MevfydGHKPSNcVEqXNGvdPpTZRYwkN9AJKC6WKTEvEBZXpxnKPhig6nuRwdftXT1S7tihBbMFVra9tpTm?cluster=devnet"
+    },
+    "cohortBuildDeployment": {
+      "label": "Deploy CohortBuild",
+      "signature": "64AogE32ADR79sLxT8c1HUey8xsnVVBsaqBY9yagac3fQB9RNGwKyE16znpXWJ15LS5PAj4VUho6qSQdN4KA9hqu",
+      "explorerUrl": "https://explorer.solana.com/tx/64AogE32ADR79sLxT8c1HUey8xsnVVBsaqBY9yagac3fQB9RNGwKyE16znpXWJ15LS5PAj4VUho6qSQdN4KA9hqu?cluster=devnet"
+    },
+    "rewardAuthorityFunding": {
+      "label": "Fund DEMO reward authority",
+      "signature": "4LNrACpYCeGsYTvZx1ci8VRePWFqhDWEvm74UHNUMSsFrDwf62aMP1ANC8Wvmhh1tWDZe9jUn4Gk4S6LQgPLgoQQ",
+      "explorerUrl": "https://explorer.solana.com/tx/4LNrACpYCeGsYTvZx1ci8VRePWFqhDWEvm74UHNUMSsFrDwf62aMP1ANC8Wvmhh1tWDZe9jUn4Gk4S6LQgPLgoQQ?cluster=devnet"
+    },
+    "userFunding": {
+      "label": "Fund DEMO participant",
+      "signature": "612Ns3WZLRudXf6aTBLqfjbv7cL1hQvBRzTVELXUHDdofJACSmMkEzfFygTP2xZYqaN3hTqjmNnMg4KRCLBD6dNo",
+      "explorerUrl": "https://explorer.solana.com/tx/612Ns3WZLRudXf6aTBLqfjbv7cL1hQvBRzTVELXUHDdofJACSmMkEzfFygTP2xZYqaN3hTqjmNnMg4KRCLBD6dNo?cluster=devnet"
+    },
+    "campaignCreated": {
+      "label": "Create Campaign",
+      "signature": "3PFZQ1VHSKYRFA5EVDrjd1an32Rzb2P2Wwp3BuRxE1RJZujHSmv8YMTo16Wdo1gJNHsBSHGP8Z4f3DXPn6C2pmSk",
+      "explorerUrl": "https://explorer.solana.com/tx/3PFZQ1VHSKYRFA5EVDrjd1an32Rzb2P2Wwp3BuRxE1RJZujHSmv8YMTo16Wdo1gJNHsBSHGP8Z4f3DXPn6C2pmSk?cluster=devnet"
+    },
+    "campaignFrozen": {
+      "label": "Freeze Campaign",
+      "signature": "436jBGjrWashGoVtksDRdmwmt2dE6hcSjbgFBXpJ9Jd51hCkzGegj1YNyRCUhTjpTnhMakqL4X2NDsfdu1D9eMie",
+      "explorerUrl": "https://explorer.solana.com/tx/436jBGjrWashGoVtksDRdmwmt2dE6hcSjbgFBXpJ9Jd51hCkzGegj1YNyRCUhTjpTnhMakqL4X2NDsfdu1D9eMie?cluster=devnet"
+    },
+    "campaignStarted": {
+      "label": "Start Campaign",
+      "signature": "21Xyb9prpRSgNJs5zmMozzEWCJEcG3MRdkXuzswb7NHFbquuo59hEFHF1cK6WHGx8gZkYJvtLz1zbh4a4mLLcmu1",
+      "explorerUrl": "https://explorer.solana.com/tx/21Xyb9prpRSgNJs5zmMozzEWCJEcG3MRdkXuzswb7NHFbquuo59hEFHF1cK6WHGx8gZkYJvtLz1zbh4a4mLLcmu1?cluster=devnet"
+    },
+    "userInitialized": {
+      "label": "Initialize UserProgress",
+      "signature": "3s9qm5EMQ9F9Rm1yVvydLyiugn27Wg5SBbS68mcBCw61FTaYKpWPiiVrdFFaC1eeWVsX9A7sW13huEraYZL4N6eK",
+      "explorerUrl": "https://explorer.solana.com/tx/3s9qm5EMQ9F9Rm1yVvydLyiugn27Wg5SBbS68mcBCw61FTaYKpWPiiVrdFFaC1eeWVsX9A7sW13huEraYZL4N6eK?cluster=devnet"
+    },
+    "moduleSubmitted": {
+      "label": "Submit pending ModuleReceipt",
+      "signature": "4uCESM7ZaDFLtK79bgs3H1z6JkCx4vcFBMaKshRLwbwhftrmdTtorfzuJ2bYdoGRgiWrmYfn1RztwxZh3azQ4b2z",
+      "explorerUrl": "https://explorer.solana.com/tx/4uCESM7ZaDFLtK79bgs3H1z6JkCx4vcFBMaKshRLwbwhftrmdTtorfzuJ2bYdoGRgiWrmYfn1RztwxZh3azQ4b2z?cluster=devnet"
+    },
+    "moduleFinalized": {
+      "label": "Finalize Module",
+      "signature": "2Bp2tzGwmrzxXjEyomqWzMjECKifVHAqvK2b4K622KvBFuHnS6EfFkKzo9cmfxUR8f8LTTwS5wJcoZzkHfFPXne9",
+      "explorerUrl": "https://explorer.solana.com/tx/2Bp2tzGwmrzxXjEyomqWzMjECKifVHAqvK2b4K622KvBFuHnS6EfFkKzo9cmfxUR8f8LTTwS5wJcoZzkHfFPXne9?cluster=devnet"
+    },
+    "moduleFinalization": {
+      "label": "Finalize Module",
+      "signature": "2Bp2tzGwmrzxXjEyomqWzMjECKifVHAqvK2b4K622KvBFuHnS6EfFkKzo9cmfxUR8f8LTTwS5wJcoZzkHfFPXne9",
+      "explorerUrl": "https://explorer.solana.com/tx/2Bp2tzGwmrzxXjEyomqWzMjECKifVHAqvK2b4K622KvBFuHnS6EfFkKzo9cmfxUR8f8LTTwS5wJcoZzkHfFPXne9?cluster=devnet"
+    },
+    "challengeCreated": {
+      "label": "Create CohortBuild Challenge",
+      "signature": "3aTFG6AB36SWBpcLNsMFMiA2AjzUnbnZ4oQh86iKBUNzbm5wJ15XNyoyPYcKNHMeDagqPX2yfKa7Tj34iuxsqHB7",
+      "explorerUrl": "https://explorer.solana.com/tx/3aTFG6AB36SWBpcLNsMFMiA2AjzUnbnZ4oQh86iKBUNzbm5wJ15XNyoyPYcKNHMeDagqPX2yfKa7Tj34iuxsqHB7?cluster=devnet"
+    },
+    "submissionCreated": {
+      "label": "Create BuildSubmission",
+      "signature": "2wtPc5j6Bjc7w6V22WxztwEQuGNaogC6anvNFvqwUeZoiP5GSMLVLgrxfpEGKZMQa4niVjBz6HUMxjPNU2SVP9iH",
+      "explorerUrl": "https://explorer.solana.com/tx/2wtPc5j6Bjc7w6V22WxztwEQuGNaogC6anvNFvqwUeZoiP5GSMLVLgrxfpEGKZMQa4niVjBz6HUMxjPNU2SVP9iH?cluster=devnet"
+    },
+    "nativeCpiShip": {
+      "label": "CohortBuild native CPI to BuilderLoop Shipped",
+      "signature": "5YknRqK7vDviFqNf4Lq9ogw8MSDyJ6eSQ6VLNotzBZ7oLDk3uCdE1sj79VHzhcfZteyTFxpFbP7HzrwaC7vUkHdP",
+      "explorerUrl": "https://explorer.solana.com/tx/5YknRqK7vDviFqNf4Lq9ogw8MSDyJ6eSQ6VLNotzBZ7oLDk3uCdE1sj79VHzhcfZteyTFxpFbP7HzrwaC7vUkHdP?cluster=devnet"
+    },
+    "rewardCreated": {
+      "label": "Create fixed SPL Reward",
+      "signature": "3hu2gdNgNm3uC6CcrrFWZzKqDFuxmfCpEFUgnbQ5esFB4omXEtUyKTjSEgAaFQkH76fjbFTMVGbcefvzeteGC9bo",
+      "explorerUrl": "https://explorer.solana.com/tx/3hu2gdNgNm3uC6CcrrFWZzKqDFuxmfCpEFUgnbQ5esFB4omXEtUyKTjSEgAaFQkH76fjbFTMVGbcefvzeteGC9bo?cluster=devnet"
+    },
+    "rewardFunded": {
+      "label": "Fund fixed SPL Reward",
+      "signature": "32m8W3VQy6ZNq9MXbnu2GFq9wyGB9Tx9G38bGyP4YnozoSXrzPJcnwP2CyzqW3jb5JWGvfWmXPoHTT5SjJmZNZVm",
+      "explorerUrl": "https://explorer.solana.com/tx/32m8W3VQy6ZNq9MXbnu2GFq9wyGB9Tx9G38bGyP4YnozoSXrzPJcnwP2CyzqW3jb5JWGvfWmXPoHTT5SjJmZNZVm?cluster=devnet"
+    },
+    "rewardActivated": {
+      "label": "Activate fixed SPL Reward",
+      "signature": "3HUQxfrWzFUxrGxhGyxaUfDCs2axQrQuYUdmbgEuJfQLnjo3n2EiVAx5myjxg2Vm2ECY4UYKPBRs8vp1oDG2xiUW",
+      "explorerUrl": "https://explorer.solana.com/tx/3HUQxfrWzFUxrGxhGyxaUfDCs2axQrQuYUdmbgEuJfQLnjo3n2EiVAx5myjxg2Vm2ECY4UYKPBRs8vp1oDG2xiUW?cluster=devnet"
+    },
+    "rewardClaimed": {
+      "label": "Claim fixed SPL Reward",
+      "signature": "4amsThi4sYufPZr2vNVpWYyk4LjoBEznSfC44PapphfqTpwxEUXiQQc7SmxfxJNTnUsgxo1RN1kf42PstZtJTAB4",
+      "explorerUrl": "https://explorer.solana.com/tx/4amsThi4sYufPZr2vNVpWYyk4LjoBEznSfC44PapphfqTpwxEUXiQQc7SmxfxJNTnUsgxo1RN1kf42PstZtJTAB4?cluster=devnet"
+    }
+  }
 }

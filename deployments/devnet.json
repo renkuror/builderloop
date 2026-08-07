@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "status": "deployed",
+  "cluster": "devnet",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "programs": {
+    "builderloop": {
+      "address": "3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2",
+      "deploymentSignature": "4QAkx52MevfydGHKPSNcVEqXNGvdPpTZRYwkN9AJKC6WKTEvEBZXpxnKPhig6nuRwdftXT1S7tihBbMFVra9tpTm",
+      "explorerUrl": "https://explorer.solana.com/address/3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2?cluster=devnet",
+      "deploymentExplorerUrl": "https://explorer.solana.com/tx/4QAkx52MevfydGHKPSNcVEqXNGvdPpTZRYwkN9AJKC6WKTEvEBZXpxnKPhig6nuRwdftXT1S7tihBbMFVra9tpTm?cluster=devnet"
+    },
+    "cohortBuild": {
+      "address": "BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF",
+      "deploymentSignature": "64AogE32ADR79sLxT8c1HUey8xsnVVBsaqBY9yagac3fQB9RNGwKyE16znpXWJ15LS5PAj4VUho6qSQdN4KA9hqu",
+      "explorerUrl": "https://explorer.solana.com/address/BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF?cluster=devnet",
+      "deploymentExplorerUrl": "https://explorer.solana.com/tx/64AogE32ADR79sLxT8c1HUey8xsnVVBsaqBY9yagac3fQB9RNGwKyE16znpXWJ15LS5PAj4VUho6qSQdN4KA9hqu?cluster=devnet"
+    }
+  },
+  "demo": {
+    "status": "complete",
+    "label": "DEMO CONFIGURATION — shortened real Solana Clock gates",
+    "campaign": "G5NZMxbV5xgnYS2dxLBDJGAZTigMJQaH8c73tSswLLHb",
+    "reward": "7LkFHiirvkQXUQHpUtGDqLpPaMw5CrBVnEEp6ifZRBpB",
+    "userProgress": "7JS9WDvbHjKukzrrufTjTsRLbxEhqXVusJNFbPvBNAjW",
+    "claim": "58pvBJsKNa1gWK4EdA5s5DJDA9dbkUWu1vpE2AZUCX3w",
+    "mint": "FLHwwyaMZLnuRX7Upph219rjDFXUGtudZixYUKf7TBmb",
+    "recipient": "HfagYvBGY1JVvXkNYQNe9ZUVqMqpnc5f78sjmMvFg6b2",
+    "timing": {
+      "periodSeconds": 2,
+      "minimumPeriodGap": 1,
+      "minimumElapsedSeconds": 2,
+      "moduleChallengeDelaySeconds": 1
+    },
+    "transactions": {
+      "moduleFinalization": {
+        "label": "Finalize Module",
+        "signature": "2Bp2tzGwmrzxXjEyomqWzMjECKifVHAqvK2b4K622KvBFuHnS6EfFkKzo9cmfxUR8f8LTTwS5wJcoZzkHfFPXne9",
+        "explorerUrl": "https://explorer.solana.com/tx/2Bp2tzGwmrzxXjEyomqWzMjECKifVHAqvK2b4K622KvBFuHnS6EfFkKzo9cmfxUR8f8LTTwS5wJcoZzkHfFPXne9?cluster=devnet"
+      },
+      "nativeCpiShip": {
+        "label": "CohortBuild native CPI to BuilderLoop Shipped",
+        "signature": "5YknRqK7vDviFqNf4Lq9ogw8MSDyJ6eSQ6VLNotzBZ7oLDk3uCdE1sj79VHzhcfZteyTFxpFbP7HzrwaC7vUkHdP",
+        "explorerUrl": "https://explorer.solana.com/tx/5YknRqK7vDviFqNf4Lq9ogw8MSDyJ6eSQ6VLNotzBZ7oLDk3uCdE1sj79VHzhcfZteyTFxpFbP7HzrwaC7vUkHdP?cluster=devnet"
+      },
+      "rewardClaimed": {
+        "label": "Claim fixed SPL Reward",
+        "signature": "4amsThi4sYufPZr2vNVpWYyk4LjoBEznSfC44PapphfqTpwxEUXiQQc7SmxfxJNTnUsgxo1RN1kf42PstZtJTAB4",
+        "explorerUrl": "https://explorer.solana.com/tx/4amsThi4sYufPZr2vNVpWYyk4LjoBEznSfC44PapphfqTpwxEUXiQQc7SmxfxJNTnUsgxo1RN1kf42PstZtJTAB4?cluster=devnet"
+      }
+    }
+  }
+}

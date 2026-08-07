@@ -1,5 +1,7 @@
 # BuilderLoop Frontend Manual QA
 
+> Historical local-fixture QA checklist. Current Devnet verification is recorded in [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md); this checklist does not replace the live evidence checks.
+
 ## Scope and evidence status
 
 Run this against the final built client, not a design file. Record actual `PASS`, `FAIL`, or `NOT RUN` next to each item. This checklist does not certify Devnet readiness: the current repository has localnet-only evidence and Devnet deployment/transaction links are not produced.

@@ -2,7 +2,7 @@
 
 ## Status
 
-COMPLETE for the mandated localnet scope. Devnet/mainnet are explicitly excluded.
+The original localnet MVP is complete. The public Devnet release is now tracked in [DEVNET_RELEASE_REPORT.md](DEVNET_RELEASE_REPORT.md); Mainnet remains absolutely forbidden.
 
 ## Completed work packages
 
@@ -71,8 +71,8 @@ The validator test creates ephemeral real accounts and transitions Module pendin
 
 ## Devnet evidence
 
-- Not produced. Devnet is absolutely excluded by the requested scope.
-- `evidence/devnet-addresses.json` and `evidence/transaction-links.json` state `not-produced`; no links or signatures are fabricated.
+- Verified in `deployments/devnet.json`, `evidence/devnet-addresses.json`, and `evidence/transaction-links.json`.
+- The real public lifecycle includes Module finalization, native CPI Ship, and fixed SPL Claim links. See `DEVNET_RELEASE_REPORT.md`.
 
 ## External blockers
 
@@ -112,4 +112,4 @@ pnpm secrets
 - Added the Mechanical Manga judge frontend across seven direct routes, deterministic fixture states, an optional local-validator wallet path, and 11 actual fixture screenshots under `docs/assets/frontend/`.
 - Green in this Windows host: `pnpm run ci` (27 Node tests), `pnpm frontend:build`, `pnpm playwright test` (10 browser tests), `sh scripts/verify-frontend.sh`, `pnpm secrets`, `pnpm audit --prod`, and `cargo fmt --check`.
 - Current Windows toolchain limitation: `anchor` is not installed; Cargo custom build scripts fail to execute with `os error 5`; and no local validator/provider is configured. These current-host failures do not replace the historical localnet evidence above and are not reported as green.
-- The frontend never claims Devnet, public transaction links, wallet settlement, sponsor activity, or a recorded video. See `FRONTEND_COMPLETION_REPORT.md` for the current frontend handoff.
+- The frontend claims Devnet only when the checked-in deployment status is `deployed`; it never claims sponsor activity, Sybil resistance, retention, or a recorded video.

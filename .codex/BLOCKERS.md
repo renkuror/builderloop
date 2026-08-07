@@ -2,9 +2,8 @@
 
 ## Current
 
-- No blocker remains for the static frontend, fixture browser checks, or source-level frontend verification.
-- This Windows host cannot complete the native Anchor check set: `anchor` is absent from PATH; Cargo build scripts fail to execute with Windows `os error 5` even from an isolated temporary target; and the local-validator test has no `ANCHOR_PROVIDER_URL`/running validator.
-- Devnet/mainnet deployment and external sponsor/retention evidence are explicitly excluded, not environment blockers.
+- Playwright browser smoke is blocked on this host: the pinned Chromium headless-shell executable is missing from `/home/user/.cache/ms-playwright`, and the package installer exits without populating it. The production bundle, JavaScript CI, and source-level frontend checks pass; no browser result is represented as green.
+- No Devnet protocol blocker remains. Both programs, the real demo lifecycle, public evidence verification, and localnet regression pass.
 
 ## Historical resolution
 

@@ -1,6 +1,7 @@
 import { copyFileSync, cpSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildSync } from "esbuild";
+import "./build-devnet-config.js";
 
 const entryPoint = resolve("web", "app.js");
 const outputFile = resolve("dist", "web", "app.js");

@@ -1,5 +1,7 @@
 # BuilderLoop Frontend Final Red Team
 
+> Historical localnet/fixture review. The current public Devnet release supersedes its deployment-status statements; see [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md).
+
 ## Purpose and current constraint
 
 This review covers the final local build, actual fixture screenshots captured on 2026-08-06, unit checks, and browser E2E checks. **Current review status: frontend checks passed; demo recording and Devnet evidence remain pending.** This document does not certify a Devnet submission.

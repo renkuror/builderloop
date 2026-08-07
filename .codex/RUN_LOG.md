@@ -35,3 +35,12 @@
 - Verified `pnpm run ci`, standalone frontend build/tests, Playwright (10 passing), portable `scripts/verify-frontend.sh`, secret scan, and production dependency audit.
 - The Windows host lacked Anchor and blocked Cargo build-script execution with `os error 5`; no native/local-validator command was reported as green from this host.
 - Committed frontend delivery as `5eba2d1`, pushed `codex/mechanical-manga-frontend`, and opened draft PR #3 into `main` without merging.
+
+## 2026-08-07
+
+- Audited fixed IDs, deploy keypair public keys, IDLs, CPI references, and frontend/localnet wiring on `codex/devnet-release`; no identity regeneration performed.
+- Created/configured the external Devnet-only payer, deployed both programs to Devnet, verified each with `solana program show`, and preserved deployment signatures and Explorer links.
+- Ran the guarded real Devnet demo with shortened real Clock gates. It verified final Shipped state, Claim PDA, and recipient token balance before writing public evidence.
+- Added Devnet runbook, evidence verifier, public frontend config, LIVE DEVNET account reads, Vercel settings, and release report.
+- Green: `pnpm run ci`, `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, `anchor build`, `anchor test --skip-build`, `pnpm evidence`, `pnpm secrets`, and `pnpm devnet:verify`.
+- Playwright install attempts did not populate the pinned Chromium cache; browser smoke remains explicitly blocked and unclaimed.

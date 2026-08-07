@@ -1,6 +1,6 @@
 # BuilderLoop Project State
 
-Last updated: 2026-08-05 in Ubuntu/WSL2.
+Last updated: 2026-08-07 in Ubuntu/WSL2.
 
 ## Completed
 
@@ -38,10 +38,14 @@ The pre-existing JavaScript model remains only a parity/reference layer. Complet
 - `pnpm evidence`
 - `pnpm secrets`
 
-## Current / next
+## Devnet release checkpoint (2026-08-07)
 
-- Current: draft PR #3 opened for mechanical-manga frontend; preserve unmerged state for review.
-- Devnet/mainnet: explicitly excluded, not pending.
+- Preserved audited IDs after checking `declare_id!`, `anchor keys list`, deploy keypair public keys, IDLs, CPI references, and frontend configuration.
+- Dedicated Devnet payer is outside the repository at `/home/user/.config/solana/builderloop-devnet.json`; Solana CLI is configured to `https://api.devnet.solana.com` only.
+- BuilderLoop and CohortBuild are deployed and confirmed on Devnet with the fixed IDs. `pnpm devnet:demo` completed a real Campaign → Module → Clock gate → native CPI Ship → fixed SPL Claim lifecycle and wrote public evidence.
+- `pnpm devnet:verify` passes. `pnpm run ci`, `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and `anchor test --skip-build` pass.
+- Playwright smoke is environment-blocked: the pinned Chromium executable is still absent after installer attempts; no browser pass is claimed.
+- Remaining release actions: final docs/state commit, push branch, create PR into `main`, and owner-only Vercel browser deployment.
 
 ## 2026-08-06 Frontend checkpoint
 
