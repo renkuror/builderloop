@@ -37,6 +37,8 @@ pnpm run ci
 pnpm secrets
 pnpm devnet:verify
 pnpm public:verify
+# Optional browser smoke against the public host when Chromium is available:
+PUBLIC_FRONTEND_URL=https://builderloop-tan.vercel.app pnpm playwright test
 ```
 
 The integration suite uses ephemeral local-validator fixtures. The public Devnet release uses a dedicated external fee payer and records only public addresses and transaction signatures. Mainnet is absolutely forbidden. See `docs/DEVNET_RUNBOOK.md` for the guarded deployment/demo path.

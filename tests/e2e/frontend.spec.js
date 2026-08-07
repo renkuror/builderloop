@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const routes = [
   ["/", "Points cannot substitute for return."],
-  ["/demo/", "Prepared proof path — no wallet required"],
+  ["/demo/", "Public Devnet proof path"],
   ["/campaign/", "Frozen campaign configuration"],
   ["/progress/", "Wallet-bound progress"],
   ["/reward/", "Fixed reward settlement"],

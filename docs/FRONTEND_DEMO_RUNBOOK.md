@@ -6,7 +6,7 @@
 
 This is a runbook, not recording evidence. **Fixture screenshots were captured from the final local build on 2026-08-06; a demo video remains unrecorded.** The public judge path is a prepared read-only local fixture and must retain the exact label **DEMO FIXTURE — NOT LIVE** throughout recording.
 
-The repository currently has localnet-only evidence. **Do not present this runbook, a fixture, an ephemeral local-validator signature, or a local test as Devnet deployment or transaction evidence.**
+This historical runbook contains local-fixture evidence only. **Do not present it, a fixture, an ephemeral local-validator signature, or a local test as current Devnet deployment or transaction evidence.**
 
 ## Objective
 

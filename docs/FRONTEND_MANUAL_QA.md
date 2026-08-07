@@ -4,7 +4,7 @@
 
 ## Scope and evidence status
 
-Run this against the final built client, not a design file. Record actual `PASS`, `FAIL`, or `NOT RUN` next to each item. This checklist does not certify Devnet readiness: the current repository has localnet-only evidence and Devnet deployment/transaction links are not produced.
+Run this against the final built client, not a design file. Record actual `PASS`, `FAIL`, or `NOT RUN` next to each item. The fixture-specific expectations below are historical; current public Devnet status and real proof links are recorded in [PUBLIC_RELEASE_AUDIT.md](../PUBLIC_RELEASE_AUDIT.md).
 
 | Area | Manual check | Expected result | Result |
 | --- | --- | --- | --- |

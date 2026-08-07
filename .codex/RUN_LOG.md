@@ -4,11 +4,12 @@
 
 - Resolved the real production deployment from GitHub metadata: `https://builderloop-tan.vercel.app`, deployed successfully from `main` commit `5c75eaf`.
 - Verified the production host and seven direct routes over HTTPS; confirmed the Mechanical Manga bundle, `LIVE DEVNET`, Devnet IDs/configuration, proof signatures, and no public private material.
-- Ran the read-only `pnpm public:verify` audit over seven routes, three assets, and 32 Devnet Explorer URLs; all passed.
+- Ran the read-only `pnpm public:verify` audit over seven routes, three assets, audited public config/proof values, 32 Devnet Explorer URLs, and 40 local documentation links; all passed.
 - Ran `pnpm devnet:verify`, `solana program show` for both IDs, `anchor build`, `anchor test --skip-build`, Rust fmt/clippy/tests, `pnpm run ci`, `pnpm frontend:build`, `pnpm secrets`, and `pnpm evidence`; all passed.
 - Added the production URL/proof inventory to README and public docs, added `scripts/verify-public-release.js`, and recorded the browser-only limitation: Chromium installation and local Playwright bind remained unavailable.
 - Retried `pnpm playwright test` with host-level permission; the runner started all 10 tests but each failed before assertions because `chromium_headless_shell-1187` was absent. No browser PASS is claimed.
 - PR #5 opened as a draft into `main`; `local-mvp` passed. The Vercel Preview check failed externally because the Git author lacks access to the Vercel project; no merge was performed.
+- Fixed the stale live `/demo/` Playwright expectation, added `PUBLIC_FRONTEND_URL` support, strengthened public config/proof matching, and updated historical fixture docs. Final `pnpm run ci`, Rust checks, `anchor build`, `anchor test --skip-build`, `pnpm audit --prod`, `pnpm secrets`, `pnpm evidence`, `pnpm devnet:verify`, and `pnpm public:verify` passed; public Playwright remained blocked by the missing Chromium executable.
 
 ## 2026-08-05
 

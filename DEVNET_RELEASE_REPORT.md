@@ -44,7 +44,7 @@ Production settings and the verified public deployment are in [docs/VERCEL_DEPLO
 - `cargo test --workspace`: PASS (7 Rust tests)
 - `NO_DNA=1 anchor test --skip-build`: PASS (localnet integration regression)
 - `pnpm frontend:serve` plus local HTTP smoke: PASS (static bundle, `devnet-config.js`, Devnet IDs, and evidence route served)
-- Playwright browser smoke against the public host: blocked before assertions because the pinned `chromium_headless_shell-1187` executable is missing; the initial sandboxed local web-server bind also returned `EPERM`; no browser result is claimed green. HTTP route, bundle, and link checks pass.
+- `PUBLIC_FRONTEND_URL=https://builderloop-tan.vercel.app pnpm playwright test`: blocked before assertions because the pinned `chromium_headless_shell-1187` executable is missing; no browser result is claimed green. HTTP route, bundle, and link checks pass.
 
 ## Reproduction
 
@@ -52,9 +52,8 @@ See [docs/DEVNET_RUNBOOK.md](docs/DEVNET_RUNBOOK.md). The one-command demo is `N
 
 ## Branch, commits, and PR
 
-- Branch: `codex/devnet-release`
-- Release commit: `900d149 chore: publish verified devnet release`
-- Pull Request: [#4](https://github.com/renkuror/builderloop/pull/4) into `main` (not merged)
+- Release commit: `900d149 chore: publish verified devnet release`, merged into `main` by [PR #4](https://github.com/renkuror/builderloop/pull/4)
+- Public audit branch and draft PR: [#5](https://github.com/renkuror/builderloop/pull/5) into `main`
 
 ## Known limitations and remaining human actions
 
