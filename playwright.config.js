@@ -24,6 +24,8 @@ function resolveChromiumExecutable() {
 }
 
 const executablePath = resolveChromiumExecutable();
+const baseURL = process.env.PUBLIC_FRONTEND_URL ?? "http://127.0.0.1:4173";
+const usePublicFrontend = Boolean(process.env.PUBLIC_FRONTEND_URL);
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -32,15 +34,17 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"]],
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     ...(executablePath ? { launchOptions: { executablePath } } : {}),
   },
-  webServer: {
-    command: "node scripts/serve-frontend.js",
-    url: "http://127.0.0.1:4173/",
-    reuseExistingServer: true,
-    timeout: 30_000,
-  },
+  ...(usePublicFrontend ? {} : {
+    webServer: {
+      command: "node scripts/serve-frontend.js",
+      url: "http://127.0.0.1:4173/",
+      reuseExistingServer: true,
+      timeout: 30_000,
+    },
+  }),
 });

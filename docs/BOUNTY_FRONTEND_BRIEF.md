@@ -57,7 +57,7 @@ Its stages are proof controls, not decoration: selecting one must show the relev
 
 ## Evidence posture and current gap
 
-**Current repository evidence is localnet only. Devnet deployment, Devnet program addresses, and Devnet transaction links have not been produced.** Local validator signatures are ephemeral and must not be presented as durable Explorer evidence.
+**At the historical fixture checkpoint, repository evidence was localnet only.** The current Devnet deployment, program addresses, and transaction links are recorded in [DEVNET_RELEASE_REPORT.md](../DEVNET_RELEASE_REPORT.md). Local validator signatures remain ephemeral and must not be presented as durable Explorer evidence.
 
 That gap is material for a challenge requiring Devnet deployment and transaction links. Until it is closed with real deployment output, the frontend and any recording must:
 

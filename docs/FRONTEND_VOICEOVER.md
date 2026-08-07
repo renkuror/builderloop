@@ -4,7 +4,7 @@
 
 ## Read-this-first disclosure
 
-These lines are approved only for the current localnet/fixture evidence posture. **Devnet deployment and Devnet transaction links have not been produced.** Do not replace **DEMO FIXTURE — NOT LIVE** with a softer phrase, and do not narrate a fixture control as a signature, transfer, or public confirmation.
+These lines are approved only for the historical localnet/fixture recording checkpoint. **They are not current production-release narration.** Do not replace **DEMO FIXTURE — NOT LIVE** with a softer phrase, and do not narrate a fixture control as a signature, transfer, or public confirmation. Use [PUBLIC_RELEASE_AUDIT.md](../PUBLIC_RELEASE_AUDIT.md) for current Devnet evidence.
 
 ## Core 15-second explanation
 
