@@ -2,7 +2,7 @@
 
 ## Status
 
-Devnet deployment and the real public demonstration are verified on `codex/devnet-release`. Mainnet was not used. The existing audited program identities were preserved.
+Devnet deployment and the real public demonstration are verified on `main`. The public production frontend is [builderloop-tan.vercel.app](https://builderloop-tan.vercel.app). Mainnet was not used. The existing audited program identities were preserved.
 
 ## Programs
 
@@ -30,7 +30,7 @@ Key proof transactions:
 
 The Mechanical Manga frontend keeps its existing design and now builds a public `devnet-config.js`. It displays `LIVE DEVNET`, reads the configured Campaign/UserProgress/Reward accounts from Devnet RPC, and links only to genuine Devnet accounts and transactions. No private key is present in frontend configuration.
 
-Production settings and owner-only deployment actions are in [docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md). No Vercel URL is claimed.
+Production settings and the verified public deployment are in [docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md). The complete public release record is [PUBLIC_RELEASE_AUDIT.md](PUBLIC_RELEASE_AUDIT.md).
 
 ## Verification
 
@@ -44,7 +44,7 @@ Production settings and owner-only deployment actions are in [docs/VERCEL_DEPLOY
 - `cargo test --workspace`: PASS (7 Rust tests)
 - `NO_DNA=1 anchor test --skip-build`: PASS (localnet integration regression)
 - `pnpm frontend:serve` plus local HTTP smoke: PASS (static bundle, `devnet-config.js`, Devnet IDs, and evidence route served)
-- Playwright browser smoke: blocked because the environment’s Playwright Chromium cache remains empty after installer attempts; no browser tests are claimed green.
+- Playwright browser smoke against the public host: blocked before assertions because the pinned `chromium_headless_shell-1187` executable is missing; the initial sandboxed local web-server bind also returned `EPERM`; no browser result is claimed green. HTTP route, bundle, and link checks pass.
 
 ## Reproduction
 
@@ -60,4 +60,4 @@ See [docs/DEVNET_RUNBOOK.md](docs/DEVNET_RUNBOOK.md). The one-command demo is `N
 
 - The verifier and reference source authority are configured trust boundaries; this release makes no Sybil-resistance, proof-of-personhood, sponsor-independence, organic-retention, or adoption claim.
 - The demo’s short timing is explicitly demo-only; production timing must be configured before freeze.
-- A human owner must log into Vercel, import the repository, use the documented static settings, and review the resulting `LIVE DEVNET` site.
+- Browser-extension wallet signing and visual console inspection remain manual follow-up because no browser executable was available in this audit environment.

@@ -17,6 +17,7 @@
     "anchor:build": "anchor build",
     "devnet:demo": "node scripts/devnet-demo.js",
     "devnet:verify": "node scripts/verify-devnet-evidence.js",
+    "public:verify": "node scripts/verify-public-release.js",
     "ci": "pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm frontend:build",
     "secrets": "node scripts/secret-scan.js",
     "evidence": "node scripts/export-evidence.js"

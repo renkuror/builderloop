@@ -1,5 +1,11 @@
 # BuilderLoop Decisions
 
+## 2026-08-08: Public production URL and audit boundary
+
+- Use the GitHub/Vercel-verified canonical alias `https://builderloop-tan.vercel.app` as the public Demo URL; retain the immutable deployment URL only as audit metadata. No Vercel URL is inferred from a placeholder.
+- Add `pnpm public:verify` as a read-only release check for direct routes, public bundle environment/security markers, and checked-in Devnet Explorer links. It does not submit transactions or require a wallet.
+- Report the public HTTP/Devnet release as verified while keeping browser visual/console/wallet automation explicitly limited by the unavailable Chromium executable and local bind permission.
+
 ## 2026-08-05: Initial Repository Baseline
 
 - Use `main` as the default branch.

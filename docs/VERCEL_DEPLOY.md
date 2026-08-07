@@ -1,6 +1,6 @@
 # Vercel deployment
 
-The frontend is a static bundle produced by the repository’s existing build script. Do not fabricate a Vercel URL; the owner must complete the final browser login/deploy step.
+The frontend is a static bundle produced by the repository’s existing build script. The verified public production alias is [builderloop-tan.vercel.app](https://builderloop-tan.vercel.app). GitHub deployment metadata also reports [builderloop-2kiqqr62o-renkuror1.vercel.app](https://builderloop-2kiqqr62o-renkuror1.vercel.app), but that immutable target is Vercel-auth-protected and is not the judge-facing URL.
 
 ## Exact project settings
 
@@ -22,11 +22,8 @@ The checked-in Devnet deployment is the default public configuration. Optional p
 
 There are no required private environment variables. Never add `ANCHOR_WALLET`, keypair JSON, seed phrases, or fee-payer secrets to Vercel. If an override is used, it must still point to the deployed Devnet programs and public demo accounts.
 
-## Owner actions
+## Verified production deployment
 
-1. Open Vercel and sign in as the repository owner.
-2. Import the GitHub repository and select branch `codex/devnet-release` (or the reviewed PR branch).
-3. Confirm the settings above and deploy.
-4. Open the generated HTTPS URL and check `LIVE DEVNET`, the Campaign/Return Rail account state, and every Explorer link.
+The GitHub Production deployment completed successfully from the audited `main` commit. The public verification record is [PUBLIC_RELEASE_AUDIT.md](../PUBLIC_RELEASE_AUDIT.md). It checks `LIVE DEVNET`, the configured Campaign/Return Rail account state, direct route navigation, bundle security, and every checked-in Devnet Explorer link.
 
-The repository does not contain a Vercel URL because none has been created by the owner.
+For a future redeploy, preserve the settings above, keep `PUBLIC_SOLANA_CLUSTER=devnet`, and rerun `pnpm public:verify` against the new URL with `PUBLIC_FRONTEND_URL=https://...`. Mainnet is forbidden.

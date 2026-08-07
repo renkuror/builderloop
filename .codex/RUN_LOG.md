@@ -1,5 +1,14 @@
 # BuilderLoop Run Log
 
+## 2026-08-08
+
+- Resolved the real production deployment from GitHub metadata: `https://builderloop-tan.vercel.app`, deployed successfully from `main` commit `5c75eaf`.
+- Verified the production host and seven direct routes over HTTPS; confirmed the Mechanical Manga bundle, `LIVE DEVNET`, Devnet IDs/configuration, proof signatures, and no public private material.
+- Ran the read-only `pnpm public:verify` audit over seven routes, three assets, and 32 Devnet Explorer URLs; all passed.
+- Ran `pnpm devnet:verify`, `solana program show` for both IDs, `anchor build`, `anchor test --skip-build`, Rust fmt/clippy/tests, `pnpm run ci`, `pnpm frontend:build`, `pnpm secrets`, and `pnpm evidence`; all passed.
+- Added the production URL/proof inventory to README and public docs, added `scripts/verify-public-release.js`, and recorded the browser-only limitation: Chromium installation and local Playwright bind remained unavailable.
+- Retried `pnpm playwright test` with host-level permission; the runner started all 10 tests but each failed before assertions because `chromium_headless_shell-1187` was absent. No browser PASS is claimed.
+
 ## 2026-08-05
 
 - Inspected repository folder; no `.git` directory was present.

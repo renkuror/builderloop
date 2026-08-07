@@ -1,6 +1,6 @@
 # BuilderLoop Project State
 
-Last updated: 2026-08-07 in Ubuntu/WSL2.
+Last updated: 2026-08-08 in Ubuntu/WSL2.
 
 ## Completed
 
@@ -12,6 +12,7 @@ Last updated: 2026-08-07 in Ubuntu/WSL2.
 - WP6 issuer/reward CLI and three-screen wallet client reading actual program accounts and submitting claims.
 - WP7 local adversarial hardening and truthful architecture/threat/trust documentation.
 - WP8 local build/test evidence and reproducible commands.
+- Public production audit: canonical Vercel URL, direct-route HTTP checks, public bundle security checks, Devnet program/transaction verification, and truthful README/public evidence links.
 
 The pre-existing JavaScript model remains only a parity/reference layer. Completion claims are based on `programs/` plus local-validator tests.
 
@@ -45,8 +46,16 @@ The pre-existing JavaScript model remains only a parity/reference layer. Complet
 - Dedicated Devnet payer is outside the repository at `/home/user/.config/solana/builderloop-devnet.json`; Solana CLI is configured to `https://api.devnet.solana.com` only.
 - BuilderLoop and CohortBuild are deployed and confirmed on Devnet with the fixed IDs. `pnpm devnet:demo` completed a real Campaign → Module → Clock gate → native CPI Ship → fixed SPL Claim lifecycle and wrote public evidence.
 - `pnpm devnet:verify` passes. `pnpm run ci`, `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and `anchor test --skip-build` pass.
-- Playwright smoke is environment-blocked: the pinned Chromium executable is still absent after installer attempts; no browser pass is claimed.
-- Release checkpoint committed as `900d149`, pushed to `codex/devnet-release`, and opened as [PR #4](https://github.com/renkuror/builderloop/pull/4) into `main` without merging. Remaining human action is the owner-only Vercel browser deployment/review.
+- `pnpm public:verify` passes against `https://builderloop-tan.vercel.app`; it checks seven direct routes, three public assets, and 32 Devnet Explorer links.
+- Playwright smoke is environment-blocked: the escalated retry reached the runner but all 10 tests failed before assertions because the pinned `chromium_headless_shell-1187` executable is absent; the initial sandboxed web-server bind also returned `EPERM`; no browser pass is claimed.
+- Release checkpoint committed as `900d149`, pushed to `codex/devnet-release`, and opened as [PR #4](https://github.com/renkuror/builderloop/pull/4) into `main` without merging. The later public production deployment is audited in `PUBLIC_RELEASE_AUDIT.md`; only browser-level review remains environment-limited.
+
+## 2026-08-08 public release audit checkpoint
+
+- GitHub production metadata resolved the canonical public alias `https://builderloop-tan.vercel.app`, deployed successfully from `main` commit `5c75eaf`; its immutable metadata target is Vercel-auth-protected and is not used as the public Demo URL.
+- All seven direct routes returned HTTP 200 with the application shell. The public bundle contains the Mechanical Manga UI, `LIVE DEVNET`, audited program IDs, public proof signatures, and no private material or Mainnet configuration.
+- `pnpm devnet:verify` confirmed Devnet genesis, executable BuilderLoop/CohortBuild programs, successful Module Finalization/native CPI Ship/SPL Claim signatures, and all recorded account owners.
+- Repository-side blocking defects fixed: public URL and complete proof inventory were added to README/public docs; `scripts/verify-public-release.js` and `pnpm public:verify` now make the HTTP/bundle/link audit reproducible.
 
 ## 2026-08-06 Frontend checkpoint
 
