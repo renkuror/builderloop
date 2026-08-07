@@ -1,135 +1,88 @@
 # BuilderLoop
 
-BuilderLoop is a heartbeat-normalized on-chain loyalty layer: verified meaningful activity maintains a wallet’s reusable loyalty state at the cadence a project defines.
+**Heartbeat-normalized on-chain loyalty for Solana.**
 
-## Why one loyalty clock does not fit every product
+Every product has its own natural rhythm. A daily game, weekly protocol, and monthly community should not be judged by one global activity rule. BuilderLoop lets a project commit a fixed **Project Heartbeat**, verify meaningful activity, and maintain a reusable wallet loyalty state relative to that cadence.
 
-A daily game, a weekly DeFi protocol, and a monthly community have different natural return rhythms. A single global rule such as “interact every 30 days” rewards the wrong behavior for all three. BuilderLoop lets a project freeze a **Project Heartbeat**, then measures consistent returns relative to that project-specific clock.
+> Different systems prove activity. BuilderLoop measures whether a wallet keeps returning at the project’s rhythm.
 
-Different systems prove the activity; BuilderLoop measures whether the wallet keeps returning at the rhythm expected by the project.
+## Live Devnet
 
-## Project Heartbeat
+- Frontend: [builderloop-tan.vercel.app](https://builderloop-tan.vercel.app/)
+- BuilderLoop program: [`3mK8…PL4Q2`](https://explorer.solana.com/address/3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2?cluster=devnet)
+- CohortBuild reference adapter: [`BwT8…ckWAF`](https://explorer.solana.com/address/BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF?cluster=devnet)
+- Heartbeat policy: [`7Szb…ccGkE`](https://explorer.solana.com/address/7Szb6pAR42dq3yuwuhiEQoKLPWbTDhW2uLkq6mVccGkE?cluster=devnet)
+- Demo loyalty state: [`FsPt…9WhgN`](https://explorer.solana.com/address/FsPtJM452w4FTxdvCUiGf5xfwG3JfFeAhcH2Lcb9WhgN?cluster=devnet)
 
-The new additive Heartbeat Loyalty accounts do not reinterpret any deployed legacy account:
+All public-chain links target **Devnet**. Mainnet is out of scope.
+
+## How it works
 
 ```text
-immutable LoyaltyConfig (project heartbeat + verifier + score policy)
-                 ↓
-verifier-signed meaningful activity / one-use ActivityReceipt
-                 ↓
+immutable Project Heartbeat
+        ↓
+verified meaningful activity
+        ↓
 wallet-bound LoyaltyState
-                 ↓
-effective score, tier, streak, and lazy Clock decay
-                 ↓
-LoyaltyRewardGate → fixed SPL Reward / Claim
+        ↓
+lazy Clock decay · streak · tier
+        ↓
+reward / access / benefit consumer
 ```
 
-For the MVP the heartbeat is configured and immutable. Analytics-derived updates, percentile tiers, and generic adapters are roadmap work—not implemented claims.
+1. A campaign creates an immutable `LoyaltyConfig` with a heartbeat, minimum return interval, scoring policy, tier thresholds, and verifier.
+2. An allowlisted verifier signs a domain-separated activity proof for a specific wallet and event.
+3. BuilderLoop verifies the Ed25519 instruction, prevents replay with an `ActivityReceipt`, and rejects activity inside the configured return interval.
+4. `LoyaltyState` settles score and streak using Solana Clock. Decay is O(1): no keeper or daily transaction is required.
+5. A consumer, currently a fixed-SPL `LoyaltyRewardGate`, reads effective loyalty on-chain before allowing a claim.
 
-## Live Devnet demo
+The score is bounded to `0..1000`. Repeated activity cannot substitute for returning: only one credit is available after the policy’s minimum return interval.
 
-The existing public site is [builderloop-tan.vercel.app](https://builderloop-tan.vercel.app/). Until this branch is merged and deployed, that URL serves the prior reference-adapter release rather than claiming Heartbeat Loyalty as live.
+## Real Devnet evidence
 
-The Heartbeat demo is now real, public Devnet evidence:
+| Proof | Devnet transaction |
+| --- | --- |
+| Immutable Heartbeat policy | [create policy](https://explorer.solana.com/tx/3YEgqS8hUGMee1q33gLyVBGsBX5oSEsACNmyw6RR3siU7qFjVQZLtBfqhuUUpx7U5JXEP4RxUrdY2jc3wyMuk8RZ?cluster=devnet) |
+| First verified activity | [record activity](https://explorer.solana.com/tx/gSdpoBB1N69UqCUr6C6oUiiKcHDCnqGoNYwnQzxv92LFjmdTuim8HnafNAoFhzrWPm1fmwWdnWXY1VKQUcLjGY7?cluster=devnet) |
+| Second valid return | [streak progression](https://explorer.solana.com/tx/MfazZMryoE2gZUxuzJKvh4v6AbwVTcDmMe2GzoTRNpzp8HF1MznSD9nnHApFnjqboCgbacZFUykDMs8rE29kzVP?cluster=devnet) |
+| Loyalty-gated reward | [fixed SPL claim](https://explorer.solana.com/tx/K8piABoycNFiZafsshP13wMwa8vWW7hme56PUSrPJbqwqfaV37DFMqHaBUfLj7RFtavTj4EQ4PbZcKnBLpgZE89?cluster=devnet) |
+| CohortBuild reference flow | [Module finalization](https://explorer.solana.com/tx/2Bp2tzGwmrzxXjEyomqWzMjECKifVHAqvK2b4K622KvBFuHnS6EfFkKzo9cmfxUR8f8LTTwS5wJcoZzkHfFPXne9?cluster=devnet) · [native CPI → Shipped](https://explorer.solana.com/tx/5YknRqK7vDviFqNf4Lq9ogw8MSDyJ6eSQ6VLNotzBZ7oLDk3uCdE1sj79VHzhcfZteyTFxpFbP7HzrwaC7vUkHdP?cluster=devnet) |
 
-- [LoyaltyConfig](https://explorer.solana.com/address/7Szb6pAR42dq3yuwuhiEQoKLPWbTDhW2uLkq6mVccGkE?cluster=devnet) · [LoyaltyState](https://explorer.solana.com/address/FsPtJM452w4FTxdvCUiGf5xfwG3JfFeAhcH2Lcb9WhgN?cluster=devnet)
-- [Immutable policy creation](https://explorer.solana.com/tx/3YEgqS8hUGMee1q33gLyVBGsBX5oSEsACNmyw6RR3siU7qFjVQZLtBfqhuUUpx7U5JXEP4RxUrdY2jc3wyMuk8RZ?cluster=devnet)
-- [First verified activity](https://explorer.solana.com/tx/gSdpoBB1N69UqCUr6C6oUiiKcHDCnqGoNYwnQzxv92LFjmdTuim8HnafNAoFhzrWPm1fmwWdnWXY1VKQUcLjGY7?cluster=devnet)
-- [Second valid return](https://explorer.solana.com/tx/MfazZMryoE2gZUxuzJKvh4v6AbwVTcDmMe2GzoTRNpzp8HF1MznSD9nnHApFnjqboCgbacZFUykDMs8rE29kzVP?cluster=devnet)
-- [Loyalty-gated fixed SPL claim](https://explorer.solana.com/tx/K8piABoycNFiZafsshP13wMwa8vWW7hme56PUSrPJbqwqfaV37DFMqHaBUfLj7RFtavTj4EQ4PbZcKnBLpgZE89?cluster=devnet)
+The public demo uses a deliberately short 20-second heartbeat and 15-second return interval so Clock behavior can be reproduced on Devnet. It is a verification fixture, not a production cadence recommendation.
 
-The demo command creates only public Devnet accounts and records the resulting real addresses and signatures:
+## What is on-chain
+
+- Immutable heartbeat policy and deterministic config hash
+- Wallet-bound score, streak, activity count, and policy epoch
+- Ed25519 activity-proof verification and replay protection
+- Minimum-return anti-burst rule
+- Constant-time lazy decay and tier derivation
+- Loyalty-gated, fixed-amount SPL reward settlement
+
+## Trust boundaries
+
+BuilderLoop verifies provenance, cadence, wallet binding, policy binding, replay protection, and consumer eligibility. The configured verifier (or a future native source-program adapter) still defines what counts as meaningful activity.
+
+BuilderLoop does **not** claim Sybil resistance, proof of personhood, automatic activity semantics for arbitrary protocols, autonomous heartbeat analytics, or external adoption.
+
+## CohortBuild reference adapter
+
+The original `Module → Return → Ship → Reward` flow remains supported as a reference native adapter. It demonstrates that a source program can verify its own outcome and send it to BuilderLoop through CPI. Heartbeat Loyalty is additive: existing `CampaignConfig`, `UserProgress`, and legacy reward accounts are not reinterpreted or migrated.
+
+## Repository map
+
+- `programs/builderloop` — Anchor program and Heartbeat Loyalty instructions
+- `programs/cohort-build` — reference source-program adapter
+- `crates/protocol-core` — shared fixed-width serialization and scoring helpers
+- `web` — Mechanical Manga frontend
+- `scripts` — Devnet evidence, verification, build, and safety tooling
+- `tests` / `test` — Anchor, protocol, and frontend tests
+- `deployments` and `evidence` — public Devnet addresses and transaction metadata
+
+## Verify locally
 
 ```sh
-NO_DNA=1 pnpm heartbeat:demo
-NO_DNA=1 pnpm heartbeat:verify
-```
-
-It intentionally uses a short **20-second heartbeat** and a **15-second minimum return interval** solely for reproducible Devnet Clock evidence. That configuration is not a production cadence recommendation. `deployments/devnet.json` is the source of the actual public URLs; no fixture score is labeled live by the frontend.
-
-## How loyalty works
-
-Scores are bounded to `0..1000`. For a valid new meaningful activity:
-
-1. BuilderLoop derives the current effective score from `LoyaltyState`, `LoyaltyConfig`, and Solana Clock.
-2. It rejects activity inside `minimum_return_interval`; repeated activity cannot farm score or streak.
-3. It applies O(1) lazy decay for elapsed heartbeat periods, continues or resets the streak, adds the fixed activity credit plus capped streak bonus, and clamps at 1000.
-4. It writes the settled state and a replay-resistant `ActivityReceipt` PDA.
-
-With heartbeat `H`, elapsed periods are `floor((now - last_activity) / H)` and missed periods are `max(elapsed - 1, 0)`. Effective score is `max(0, stored_score - missed_periods × decay)`. No keeper or daily settlement transaction is needed.
-
-The default demo policy is: +300 activity credit, +50 per streak step capped at four steps, −200 per missed heartbeat, with Bronze/Silver/Gold/Platinum thresholds at 0/300/600/850. The exact frozen values are decoded from the public `LoyaltyConfig` rather than hard-coded by the UI.
-
-## Meaningful activity verification
-
-### Ed25519 attestation
-
-`record_verified_activity` requires an immediately preceding Ed25519 instruction. Its fixed-width, domain-separated message binds the BuilderLoop program ID, LoyaltyConfig, campaign, wallet, configured verifier and epoch, policy epoch, activity kind, unique event hash, metadata hash, and validity window. The program rejects the wrong verifier, wallet, policy, domain, expiry, malformed precompile offsets, and replayed event.
-
-### Native CPI adapters
-
-Another Solana program can prove a fact through a native BuilderLoop adapter. BuilderLoop then applies its own heartbeat policy to the verified fact. The MVP ships the signed-verifier recurring ingress; a recurring native loyalty adapter is deliberately future work.
-
-### CohortBuild reference adapter
-
-The existing `Module → Return → Ship` flow remains live and unchanged as a reference integration: CohortBuild validates a user-bound Completion then performs a native CPI into BuilderLoop. It demonstrates the source-program half of the model, but it is no longer the definition of BuilderLoop’s product.
-
-## Lazy decay and LoyaltyState
-
-`LoyaltyState` is persistent, wallet-bound public state. It stores the score at the last settlement, last meaningful-activity timestamp, streak, activity count, policy epoch, and PDA bump—not an unbounded history. Clients and consumers derive the current score/tier using the same deterministic integer formula. This is not a claim of Sybil resistance or unique-human identity.
-
-## Loyalty-gated reward
-
-`LoyaltyRewardGate` snapshots a policy hash/epoch and a minimum effective score and tier while the legacy Reward is still Draft. `claim_loyalty_reward` derives the current state from Clock, enforces the frozen threshold, uses the existing one-Claim-PDA-per-reward/wallet rule, and transfers only the fixed amount already stored in the Reward vault. A claimant never supplies its payout amount.
-
-## Architecture
-
-Read [Heartbeat Loyalty](docs/HEARTBEAT_LOYALTY.md), [architecture](docs/ARCHITECTURE.md), [trust model](docs/TRUST_MODEL.md), [threat model](docs/THREAT_MODEL.md), and [why Solana](docs/WHY_SOLANA.md).
-
-## Existing Module → Return → Ship adapter
-
-The deployed legacy account layouts and instruction semantics remain compatible:
-
-```text
-verifier-attested Module
-→ challenge delay / real Clock period gap
-→ same-wallet CohortBuild Completion CPI
-→ Shipped UserProgress
-→ pre-funded fixed SPL Reward / Claim
-```
-
-Heartbeat Loyalty uses new PDAs and new instructions only. It does not require migration, reinterpret `CampaignConfig`/`UserProgress`, modify `record_native_ship`, or alter `claim_reward`.
-
-## Security invariants
-
-- Heartbeat policy is a separate immutable PDA and has a deterministic policy hash.
-- A verifier-signed activity is campaign-, wallet-, policy-, epoch-, and program-bound.
-- An `ActivityReceipt` makes an event single-use; a minimum return interval blocks burst farming.
-- Score math is bounded, checked, constant-time in missed periods, and derived from Solana Clock.
-- Loyalty claims require a wallet-bound state, frozen policy snapshot, fixed threshold, fixed Reward amount, same-mint signer-owned recipient, and unique Claim PDA.
-- Mainnet is forbidden. Devnet evidence uses public addresses/signatures only; no role secret is committed or shipped to the frontend.
-
-## What is enforced on-chain
-
-BuilderLoop enforces activity provenance from an allowlisted verifier, policy binding, replay protection, cadence timing, score/tier derivation, wallet binding, threshold eligibility, and fixed SPL settlement.
-
-## What remains trusted
-
-The configured verifier (or a future source-program adapter) defines what “meaningful” means. Campaign authorities choose a policy before freezing it; reward authorities fund their reward lifecycle. BuilderLoop does not prove a transaction was economically meaningful by itself, unique people, Sybil resistance, organic retention, independent sponsorship, external adoption, or autonomous heartbeat analytics.
-
-## Devnet programs and historical evidence
-
-- [BuilderLoop Devnet program](https://explorer.solana.com/address/3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2?cluster=devnet)
-- [CohortBuild Devnet program](https://explorer.solana.com/address/BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF?cluster=devnet)
-- [Historical Module finalization](https://explorer.solana.com/tx/2Bp2tzGwmrzxXjEyomqWzMjECKifVHAqvK2b4K622KvBFuHnS6EfFkKzo9cmfxUR8f8LTTwS5wJcoZzkHfFPXne9?cluster=devnet)
-- [Historical CohortBuild native CPI → Shipped](https://explorer.solana.com/tx/5YknRqK7vDviFqNf4Lq9ogw8MSDyJ6eSQ6VLNotzBZ7oLDk3uCdE1sj79VHzhcfZteyTFxpFbP7HzrwaC7vUkHdP?cluster=devnet)
-- [Historical fixed SPL reward claim](https://explorer.solana.com/tx/4amsThi4sYufPZr2vNVpWYyk4LjoBEznSfC44PapphfqTpwxEUXiQQc7SmxfxJNTnUsgxo1RN1kf42PstZtJTAB4?cluster=devnet)
-
-The old transactions remain historical evidence for the CohortBuild adapter. New Heartbeat evidence is added only by the guarded Devnet demo, never fabricated in documentation.
-
-## Tests
-
-```sh
+pnpm install --frozen-lockfile
 pnpm run ci
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
@@ -137,37 +90,12 @@ cargo test --workspace
 NO_DNA=1 anchor build
 NO_DNA=1 anchor test --skip-build
 pnpm secrets
-pnpm devnet:verify          # historical reference-adapter evidence
-pnpm heartbeat:verify       # after a Heartbeat Devnet demo exists
+pnpm devnet:verify
+pnpm heartbeat:verify
 ```
 
-The pure Rust and JavaScript suites share fixed heartbeat config/activity hash vectors and transition vectors. The Anchor suite exercises both the legacy flow and the new verifier activity, anti-burst, lazy decay, tier, and gated-claim path.
+Build the static frontend with `pnpm frontend:build` and serve it with `pnpm frontend:serve`.
 
-## Local reproduction
+## Scope
 
-```sh
-scripts/prepare-localnet.sh
-pnpm install --frozen-lockfile
-NO_DNA=1 anchor build
-NO_DNA=1 anchor test --skip-build
-pnpm run ci
-pnpm frontend:build
-pnpm frontend:serve
-```
-
-For guarded Devnet deployment and evidence, follow [docs/DEVNET_RUNBOOK.md](docs/DEVNET_RUNBOOK.md). The runbook validates the Devnet genesis hash and refuses a non-Devnet RPC before sending transactions.
-
-## Known limitations
-
-- The implemented heartbeat is configured/fixed, not automatically analytics-adaptive.
-- Verifier-signed activity has a disclosed verifier trust boundary.
-- The MVP has no Sybil resistance, relative leaderboard, universal reputation, or generic adapter marketplace.
-- The current public production URL will only become heartbeat-first after the branch deployment is promoted.
-
-## Roadmap
-
-Forward-only heartbeat epochs with bounded changes, native recurring adapters, additional LoyaltyState consumers (access, discounts, allowlists), and indexed cohort-level retention analytics are possible extensions. They are not part of this release.
-
-## License
-
-No license file is currently included in this repository.
+The MVP supports a configured, immutable heartbeat. Forward-only heartbeat epochs, analytics-derived cadence, broader native adapters, relative tiers, and additional consumers are future work.
