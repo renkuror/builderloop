@@ -92,6 +92,26 @@
       "label": "Claim fixed SPL Reward",
       "signature": "4amsThi4sYufPZr2vNVpWYyk4LjoBEznSfC44PapphfqTpwxEUXiQQc7SmxfxJNTnUsgxo1RN1kf42PstZtJTAB4",
       "explorerUrl": "https://explorer.solana.com/tx/4amsThi4sYufPZr2vNVpWYyk4LjoBEznSfC44PapphfqTpwxEUXiQQc7SmxfxJNTnUsgxo1RN1kf42PstZtJTAB4?cluster=devnet"
+    },
+    "heartbeatPolicyCreated": {
+      "label": "Create immutable HeartbeatPolicy",
+      "signature": "3YEgqS8hUGMee1q33gLyVBGsBX5oSEsACNmyw6RR3siU7qFjVQZLtBfqhuUUpx7U5JXEP4RxUrdY2jc3wyMuk8RZ",
+      "explorerUrl": "https://explorer.solana.com/tx/3YEgqS8hUGMee1q33gLyVBGsBX5oSEsACNmyw6RR3siU7qFjVQZLtBfqhuUUpx7U5JXEP4RxUrdY2jc3wyMuk8RZ?cluster=devnet"
+    },
+    "heartbeatFirstActivity": {
+      "label": "Record first verified meaningful activity",
+      "signature": "gSdpoBB1N69UqCUr6C6oUiiKcHDCnqGoNYwnQzxv92LFjmdTuim8HnafNAoFhzrWPm1fmwWdnWXY1VKQUcLjGY7",
+      "explorerUrl": "https://explorer.solana.com/tx/gSdpoBB1N69UqCUr6C6oUiiKcHDCnqGoNYwnQzxv92LFjmdTuim8HnafNAoFhzrWPm1fmwWdnWXY1VKQUcLjGY7?cluster=devnet"
+    },
+    "heartbeatSecondActivity": {
+      "label": "Record second valid heartbeat return",
+      "signature": "MfazZMryoE2gZUxuzJKvh4v6AbwVTcDmMe2GzoTRNpzp8HF1MznSD9nnHApFnjqboCgbacZFUykDMs8rE29kzVP",
+      "explorerUrl": "https://explorer.solana.com/tx/MfazZMryoE2gZUxuzJKvh4v6AbwVTcDmMe2GzoTRNpzp8HF1MznSD9nnHApFnjqboCgbacZFUykDMs8rE29kzVP?cluster=devnet"
+    },
+    "heartbeatLoyaltyRewardClaimed": {
+      "label": "Claim loyalty-gated fixed SPL Reward",
+      "signature": "K8piABoycNFiZafsshP13wMwa8vWW7hme56PUSrPJbqwqfaV37DFMqHaBUfLj7RFtavTj4EQ4PbZcKnBLpgZE89",
+      "explorerUrl": "https://explorer.solana.com/tx/K8piABoycNFiZafsshP13wMwa8vWW7hme56PUSrPJbqwqfaV37DFMqHaBUfLj7RFtavTj4EQ4PbZcKnBLpgZE89?cluster=devnet"
     }
   }
 }

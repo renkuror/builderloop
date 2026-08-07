@@ -1,6 +1,7 @@
 import { Connection, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Buffer } from "buffer";
+import { deriveEffectiveLoyalty, formatCountdown, formatHeartbeat } from "./loyalty.js";
 import {
   EVIDENCE,
   FLOW_SCENARIOS,
@@ -19,12 +20,15 @@ const PUBLIC_CONFIG = globalThis.BUILDERLOOP_PUBLIC_CONFIG ?? {
   builderloopProgramId: EVIDENCE.program,
   cohortBuildProgramId: EVIDENCE.cohortBuild,
   demo: null,
+  heartbeatDemo: null,
 };
 const PROGRAM_ID = new PublicKey(PUBLIC_CONFIG.builderloopProgramId);
 const COHORT_BUILD_ID = new PublicKey(PUBLIC_CONFIG.cohortBuildProgramId);
 const DEVNET_GENESIS_HASH = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
 const DEMO = PUBLIC_CONFIG.demo;
+const HEARTBEAT_DEMO = PUBLIC_CONFIG.heartbeatDemo;
 const LIVE_DEVNET = PUBLIC_CONFIG.cluster === "devnet" && PUBLIC_CONFIG.live === true && DEMO !== null;
+const LIVE_HEARTBEAT = LIVE_DEVNET && HEARTBEAT_DEMO !== null;
 const app = document.querySelector("#app");
 const sound = createSoundController();
 const live = {
@@ -34,6 +38,12 @@ const live = {
   progress: undefined,
   reward: undefined,
   demoProgress: undefined,
+  loyaltyConfig: undefined,
+  loyaltyState: undefined,
+  loyaltyRewardGate: undefined,
+  heartbeatReward: undefined,
+  heartbeatConfiguredState: "idle",
+  heartbeatConfiguredError: undefined,
   configuredState: "idle",
   configuredError: undefined,
 };
@@ -47,8 +57,11 @@ const rewardStatuses = ["Draft", "Funded", "Active", "Paused", "Ended", "Closed"
 const discriminators = {
   campaign: [37, 60, 103, 198, 105, 149, 26, 142],
   progress: [195, 16, 25, 215, 192, 49, 107, 204],
-  reward: [174, 129, 42, 212, 190, 18, 45, 34],
-};
+    reward: [174, 129, 42, 212, 190, 18, 45, 34],
+    loyaltyConfig: [190, 240, 195, 182, 79, 177, 63, 71],
+    loyaltyState: [149, 17, 163, 1, 74, 190, 103, 111],
+    loyaltyRewardGate: [209, 109, 16, 173, 62, 140, 156, 105],
+  };
 
 const $ = (selector) => document.querySelector(selector);
 const code = (value) => `<code>${value}</code>`;
@@ -100,7 +113,7 @@ function keyboardArt() {
 
 function renderHeader(route, scenario) {
   const nav = ROUTES.map((item) => `<a class="key-button navigation ${item.path === route.path ? "is-active" : ""}" href="${routeHref(item.path)}" ${item.path === route.path ? 'aria-current="page"' : ""}>${item.label}</a>`).join("");
-  return `<header class="site-header"><a class="wordmark" href="/" aria-label="BuilderLoop overview">BUILDER<span>LOOP</span><small>BL / RETURN INSTRUMENT</small></a><nav class="route-nav" aria-label="BuilderLoop pages">${nav}</nav><div class="header-tools"><span class="network-label" data-network="${LIVE_DEVNET ? "devnet" : "fixture"}">${devnetLabel(scenario)}</span><span id="sound-toggle"></span></div></header>`;
+  return `<header class="site-header"><a class="wordmark" href="/" aria-label="BuilderLoop overview">BUILDER<span>LOOP</span><small>BL / HEARTBEAT INSTRUMENT</small></a><nav class="route-nav" aria-label="BuilderLoop pages">${nav}</nav><div class="header-tools"><span class="network-label" data-network="${LIVE_DEVNET ? "devnet" : "fixture"}">${devnetLabel(scenario)}</span><span id="sound-toggle"></span></div></header>`;
 }
 
 function renderReturnRail(scenario) {
@@ -116,23 +129,40 @@ function renderReturnRail(scenario) {
   const selected = rail.find((stage) => stage.id === state.selectedStage) ?? rail[1];
   const status = LIVE_DEVNET ? (shipped ? (claimed ? "CLAIMED" : "SHIPPED") : "LOADING") : scenario.statusLabel;
   const evidence = LIVE_DEVNET ? `Devnet state: UserProgress ${stageName()} · Reward ${rewardStateName()}. ${live.configuredError ?? ""}` : scenario.reason;
-  return `<section class="return-rail technical-panel" aria-labelledby="return-rail-title"><div class="section-heading"><div><p class="panel-kicker">BL_04 / ORDERED RETURN</p><h2 id="return-rail-title">Return Rail</h2></div><span class="status-chip" data-state="${rail.at(-1).state}">${status}</span></div><div class="rail-stages" role="group" aria-label="Open proof detail for each return stage">${rail.map((stage) => `<button class="${keyClass(stage)} ${stage.id === selected.id ? "is-selected" : ""}" type="button" data-action="select-stage" data-stage="${stage.id}" data-state="${stage.state}" aria-pressed="${stage.id === selected.id}"><span>${stage.number}</span><strong>${stage.label}</strong><em>${stage.state}</em></button>`).join("")}</div><div id="proof-drawer" class="proof-drawer" tabindex="-1"><p class="panel-kicker">PROOF DRAWER / ${selected.number}</p><h3>${selected.label} <span class="state-line" data-state="${selected.state}">${selected.state}</span></h3><p>${selected.proof}</p><p><strong>${LIVE_DEVNET ? "Devnet account interpretation" : "Fixture interpretation"}:</strong> ${evidence}</p><details><summary>Raw evidence or error detail</summary>${code(LIVE_DEVNET ? `Campaign ${DEMO.campaign}; Program ${PROGRAM_ID.toBase58()}; RPC ${PUBLIC_CONFIG.rpcUrl}` : scenario.rawError)}</details></div></section>`;
+  return `<section class="return-rail technical-panel" aria-labelledby="return-rail-title"><div class="section-heading"><div><p class="panel-kicker">BL_04 / COHORTBUILD REFERENCE ADAPTER</p><h2 id="return-rail-title">Reference Activity Path</h2></div><span class="status-chip" data-state="${rail.at(-1).state}">${status}</span></div><p class="intro-copy">Module → Return → Ship is one verified meaningful-activity source. Heartbeat Loyalty is BuilderLoop’s reusable core.</p><div class="rail-stages" role="group" aria-label="Open proof detail for each return stage">${rail.map((stage) => `<button class="${keyClass(stage)} ${stage.id === selected.id ? "is-selected" : ""}" type="button" data-action="select-stage" data-stage="${stage.id}" data-state="${stage.state}" aria-pressed="${stage.id === selected.id}"><span>${stage.number}</span><strong>${stage.label}</strong><em>${stage.state}</em></button>`).join("")}</div><div id="proof-drawer" class="proof-drawer" tabindex="-1"><p class="panel-kicker">PROOF DRAWER / ${selected.number}</p><h3>${selected.label} <span class="state-line" data-state="${selected.state}">${selected.state}</span></h3><p>${selected.proof}</p><p><strong>${LIVE_DEVNET ? "Devnet account interpretation" : "Fixture interpretation"}:</strong> ${evidence}</p><details><summary>Raw evidence or error detail</summary>${code(LIVE_DEVNET ? `Campaign ${DEMO.campaign}; Program ${PROGRAM_ID.toBase58()}; RPC ${PUBLIC_CONFIG.rpcUrl}` : scenario.rawError)}</details></div></section>`;
 }
 
 function renderHero() {
-  const note = LIVE_DEVNET ? "One fixed Devnet DEMO CONFIGURATION. The verifier and source semantics are disclosed trust boundaries; this is not a claim of Sybil resistance or independent sponsorship." : "One fixed localnet campaign. The verifier and source semantics are disclosed trust boundaries; this is not a claim of Sybil resistance or independent sponsorship.";
-  return `<section class="hero"><div class="hero-copy"><p class="panel-kicker">BUILDERLOOP / ORDERED RETURN REWARDS FOR SOLANA COHORTS</p><h1>Points cannot substitute for return.</h1><p class="hero-lede">BuilderLoop freezes an ordered Module → Return Later → Ship path on-chain, then releases a pre-funded fixed reward only after the same wallet returns through the campaign-defined gate.</p><div class="key-row"><a class="key-button primary" href="/demo/">OPEN JUDGE DEMO</a><a class="key-button secondary" href="/evidence/">VIEW EVIDENCE</a>${link("https://github.com/renkuror/builderloop", "GitHub")}</div><p class="trust-note">${note}</p></div>${keyboardArt()}</section>`;
+  const note = LIVE_HEARTBEAT ? "The public demo uses a shortened Devnet heartbeat solely to make real Clock-based evidence practical. It does not represent a production cadence, Sybil resistance, or external adoption. This is not a claim of Sybil resistance." : "The implementation uses fixed project heartbeats. Automatic analytics-derived cadence and Sybil resistance are explicitly out of scope. This is not a claim of Sybil resistance.";
+  return `<section class="hero"><div class="hero-copy"><p class="panel-kicker">BUILDERLOOP / HEARTBEAT-NORMALIZED ON-CHAIN LOYALTY</p><h1>Loyalty should move<br>at the speed of the product.</h1><p class="hero-lede">Different systems prove the activity. BuilderLoop measures whether a wallet keeps returning at that project’s own heartbeat, then exposes a persistent on-chain loyalty state that rewards can consume.</p><div class="key-row"><a class="key-button primary" href="/demo/">OPEN HEARTBEAT DEMO</a><a class="key-button secondary" href="/evidence/">VIEW EVIDENCE</a>${link("https://github.com/renkuror/builderloop", "GitHub")}</div><p class="trust-note">${note}</p></div>${keyboardArt()}</section>`;
 }
 
 function renderComparison() {
-  return `<section class="comparison-grid" aria-label="Manual flow compared with BuilderLoop"><article class="technical-panel"><p class="panel-kicker">BL_05 / MANUAL</p><h2>Activity looks alike</h2><ol class="manual-list"><li>Issue a generic task.</li><li>Collect one-off proof.</li><li>Credit points without a return gate.</li><li>Rely on an operator to reconcile rewards.</li></ol></article><article class="technical-panel emphasis-panel"><p class="panel-kicker">BL_06 / BUILDERLOOP</p><h2>Progression must be ordered</h2><ol class="manual-list"><li>Verifier attests a frozen Module event.</li><li>Clock and discrete periods enforce return.</li><li>Same wallet completes the committed project.</li><li>Reward vault settles a fixed claim once.</li></ol></article></section>`;
+  return `<section class="comparison-grid" aria-label="Project cadence compared with BuilderLoop"><article class="technical-panel"><p class="panel-kicker">BL_05 / ONE GLOBAL CLOCK</p><h2>Tempo gets flattened</h2><ol class="manual-list"><li>Apply the same interval to every product.</li><li>Count repeated actions instead of return behavior.</li><li>Leave streaks in a private database.</li><li>Reconcile rewards off-chain.</li></ol></article><article class="technical-panel emphasis-panel"><p class="panel-kicker">BL_06 / BUILDERLOOP CORE</p><h2>Behavior is cadence-normalized</h2><ol class="manual-list"><li>A project freezes its own heartbeat.</li><li>A verifier or native program proves meaningful activity.</li><li>Solana Clock derives lazy decay and streaks.</li><li>A reward gate consumes the wallet’s effective loyalty.</li></ol></article></section>`;
+}
+
+function liveLoyaltyView() {
+  return deriveEffectiveLoyalty(live.loyaltyConfig, live.loyaltyState);
+}
+
+function renderHeartbeatPanel() {
+  if (!LIVE_HEARTBEAT) {
+    return panel("heartbeat-loyalty", "Project Heartbeat", `<p class="intro-copy">The Heartbeat Loyalty protocol is implemented locally, but its public Devnet demo has not been configured in this build.</p><p class="trust-note">DEMO FIXTURE — NOT LIVE. No score, tier, streak, or reward eligibility is represented as live data.</p>`);
+  }
+  const view = liveLoyaltyView();
+  if (!live.loyaltyConfig || !live.loyaltyState || !view) {
+    const reason = live.heartbeatConfiguredState === "failed" ? live.heartbeatConfiguredError : "Reading LoyaltyConfig and LoyaltyState from Devnet…";
+    return panel("heartbeat-loyalty", "Project Heartbeat", `<p class="intro-copy">LIVE DEVNET — ${reason}</p><p class="trust-note">The public demo uses a shortened heartbeat strictly for Devnet verification.</p>`);
+  }
+  const secondsToDecay = view.nextDecayAt - Math.floor(Date.now() / 1_000);
+  return panel("heartbeat-loyalty", "Project Heartbeat", `<p class="intro-copy">LIVE DEVNET · DEMO CONFIGURATION — SHORTENED HEARTBEAT FOR VERIFICATION. The state below is decoded from public BuilderLoop accounts and recalculated client-side using the same fixed integer formula.</p><div class="loyalty-metric-grid"><div><span class="metric-label">Project heartbeat</span><strong>${formatHeartbeat(live.loyaltyConfig.heartbeatSeconds)}</strong><p>Fixed · policy epoch ${live.loyaltyConfig.policyEpoch}</p></div><div><span class="metric-label">Return streak</span><strong>${view.effectiveStreak} CYCLE${view.effectiveStreak === 1 ? "" : "S"}</strong><p>${view.missedPeriods > 0 ? `${view.missedPeriods} missed period(s) lazily applied.` : "Within the configured cadence window."}</p></div><div><span class="metric-label">Tier</span><strong>${view.tier}</strong><p>Thresholds are frozen in LoyaltyConfig.</p></div><div><span class="metric-label">Loyalty score</span><strong>${view.effectiveScore} / 1000</strong><p>Stored score: ${live.loyaltyState.scoreAtLastSettlement}.</p></div><div><span class="metric-label">Next decay</span><strong>${formatCountdown(secondsToDecay)}</strong><p>Derived from Solana Clock and last meaningful activity.</p></div><div><span class="metric-label">Last meaningful activity</span><strong>${new Date(live.loyaltyState.lastMeaningfulActivityAt * 1_000).toISOString()}</strong><p>${live.loyaltyState.totalCountedActivities} counted activity receipt(s).</p></div></div><dl class="proof-list"><dt>LoyaltyConfig</dt><dd>${code(HEARTBEAT_DEMO.loyaltyConfig)} ${link(explorerAddress(HEARTBEAT_DEMO.loyaltyConfig), "EXPLORER")}</dd><dt>LoyaltyState</dt><dd>${code(HEARTBEAT_DEMO.loyaltyState)} ${link(explorerAddress(HEARTBEAT_DEMO.loyaltyState), "EXPLORER")}</dd><dt>Policy hash</dt><dd>${code(hex(live.loyaltyConfig.configHash))}</dd><dt>Reward gate</dt><dd>${code(HEARTBEAT_DEMO.loyaltyRewardGate)} ${link(explorerAddress(HEARTBEAT_DEMO.loyaltyRewardGate), "EXPLORER")}</dd></dl>`);
 }
 
 function renderOverview(scenario) {
   const trust = LIVE_DEVNET
-    ? `<div class="detail-grid"><div><h3>Enforced on Devnet</h3><p>Frozen eligibility fields, pending receipt, wallet/project binding, real Clock gates, native CPI Ship, and fixed classic-SPL settlement are live account state.</p></div><div><h3>Disclosed trust boundary</h3><p>This is a clearly labeled DEMO CONFIGURATION. It is not a claim of Sybil resistance, independent sponsorship, or organic retention.</p></div></div>`
-    : `<div class="detail-grid"><div><h3>Enforced on localnet</h3><p>Frozen eligibility fields, verifier epoch, pending receipt, wallet/project binding, source account checks, time/period gates, native CPI Ship, and fixed SPL settlement.</p></div><div><h3>Disclosed trust boundary</h3><p>The campaign authority configures before freeze; the verifier and CohortBuild source carry defined authority. Devnet evidence is not produced.</p></div></div>`;
-  return `${renderHero()}${renderReturnRail(scenario)}${renderComparison()}${panel("trust-disclosure", "What is enforced, and what is disclosed", trust)}`;
+    ? `<div class="detail-grid"><div><h3>Enforced on Devnet</h3><p>Frozen heartbeat policy, verifier-bound activity, one-use receipts, one credit per cadence window, Clock-derived decay, wallet-bound LoyaltyState, and fixed SPL settlement are public account state.</p></div><div><h3>Disclosed trust boundary</h3><p>Meaningful activity semantics come from the configured verifier or source adapter. BuilderLoop does not prove unique humans, Sybil resistance, external adoption, or automatic heartbeat analytics.</p></div></div>`
+    : `<div class="detail-grid"><div><h3>Enforced on localnet</h3><p>Frozen policy, verifier epoch, replay-resistant activity receipts, anti-burst timing, lazy decay, wallet binding, and a loyalty-gated fixed SPL claim.</p></div><div><h3>Disclosed trust boundary</h3><p>The campaign authority chooses the fixed heartbeat before policy creation. A verifier or source adapter defines what meaningful activity means.</p></div></div>`;
+  return `${renderHero()}${renderHeartbeatPanel()}${renderComparison()}${panel("trust-disclosure", "What is enforced, and what is disclosed", trust)}${renderReturnRail(scenario)}`;
 }
 
 function scenarioControls(scenario) {
@@ -140,13 +170,21 @@ function scenarioControls(scenario) {
 }
 
 function renderDemo(scenario) {
-  if (LIVE_DEVNET) {
-    return `${panel("judge-demo", "Public Devnet proof path", `<p class="intro-copy">${DEMO.label}. These are real Devnet accounts, not a fixture. The short gates exist only for this public demonstration.</p><div class="detail-grid"><div><span class="metric-label">Campaign return rule</span><strong>${DEMO.timing.minimumElapsedSeconds} seconds + ${DEMO.timing.minimumPeriodGap} × ${DEMO.timing.periodSeconds}-second period</strong><p>Module finalization and Ship were separate Devnet transactions.</p></div><div><span class="metric-label">Verified account state</span><strong>${stageName()}</strong><p>Reward: ${rewardStateName()}.</p></div></div>`) }${renderReturnRail(scenario)}${panel("devnet-proof", "Public proof inventory", `<dl class="proof-list"><dt>Campaign</dt><dd>${code(DEMO.campaign)} ${link(explorerAddress(DEMO.campaign), "EXPLORER")}</dd><dt>Module finalization</dt><dd>${link(DEMO.transactions.moduleFinalization.explorerUrl, "VIEW TX")}</dd><dt>Completion / native Ship</dt><dd>${link(DEMO.transactions.nativeCpiShip.explorerUrl, "VIEW TX")}</dd><dt>Fixed SPL Reward Claim</dt><dd>${link(DEMO.transactions.rewardClaimed.explorerUrl, "VIEW TX")}</dd><dt>Program IDs</dt><dd>BuilderLoop ${code(PROGRAM_ID.toBase58())} ${link(explorerAddress(PROGRAM_ID.toBase58()), "EXPLORER")} CohortBuild ${code(COHORT_BUILD_ID.toBase58())} ${link(explorerAddress(COHORT_BUILD_ID.toBase58()), "EXPLORER")}</dd></dl><p class="trust-note">Each link is a genuine Devnet account or finalized transaction. The SPL test mint has no implied value.</p>`)}`;
+  if (LIVE_HEARTBEAT) {
+    return `${panel("judge-demo", "Live Heartbeat Loyalty proof", `<p class="intro-copy">${HEARTBEAT_DEMO.label}. These are public Devnet accounts, not a fixture. The ${HEARTBEAT_DEMO.timing.heartbeatSeconds}-second heartbeat is deliberately shortened only to make Clock-based verification practical.</p><div class="detail-grid"><div><span class="metric-label">Verified activity rule</span><strong>1 credit per ${HEARTBEAT_DEMO.timing.minimumReturnInterval}-second minimum return interval</strong><p>Repeated activity inside the window is rejected and cannot farm a streak.</p></div><div><span class="metric-label">On-chain consumer</span><strong>LOYALTY-GATED REWARD</strong><p>The fixed SPL claim checks effective score and tier before transfer.</p></div></div>`) }${renderHeartbeatPanel()}${panel("devnet-proof", "Public loyalty proof inventory", `<dl class="proof-list"><dt>Heartbeat campaign</dt><dd>${code(HEARTBEAT_DEMO.campaign)} ${link(explorerAddress(HEARTBEAT_DEMO.campaign), "EXPLORER")}</dd><dt>Policy creation</dt><dd>${link(HEARTBEAT_DEMO.transactions.policyCreated.explorerUrl, "VIEW TX")}</dd><dt>First verified activity</dt><dd>${link(HEARTBEAT_DEMO.transactions.firstActivity.explorerUrl, "VIEW TX")}</dd><dt>Second valid return</dt><dd>${link(HEARTBEAT_DEMO.transactions.secondActivity.explorerUrl, "VIEW TX")}</dd><dt>Loyalty-gated claim</dt><dd>${link(HEARTBEAT_DEMO.transactions.loyaltyRewardClaimed.explorerUrl, "VIEW TX")}</dd><dt>Programs</dt><dd>BuilderLoop ${code(PROGRAM_ID.toBase58())} ${link(explorerAddress(PROGRAM_ID.toBase58()), "EXPLORER")} · CohortBuild ${code(COHORT_BUILD_ID.toBase58())} ${link(explorerAddress(COHORT_BUILD_ID.toBase58()), "EXPLORER")}</dd></dl><p class="trust-note">Every link is a genuine Devnet account or successful transaction. The test mint has no implied value.</p>`) }${renderReturnRail(scenario)}`;
   }
-  return `${panel("judge-demo", "Prepared proof path — no wallet required", `<p class="intro-copy">This is a deterministic read-only representation of the localnet scenario. It exposes the actual frozen identifiers and account model without inventing a live transaction or explorer link.</p>${scenarioControls(scenario)}<div class="detail-grid"><div><span class="metric-label">Campaign return rule</span><strong>120 seconds + 2 × 60-second periods</strong><p>Module must be finalized before Ship.</p></div><div><span class="metric-label">Prepared state</span><strong>${scenario.stage}</strong><p>${scenario.earliestShip}</p></div></div>`) }${renderReturnRail(scenario)}`;
+  if (LIVE_DEVNET) {
+    return `${panel("judge-demo", "Heartbeat Devnet evidence pending", `<p class="intro-copy">The currently configured public Devnet release proves the historical CohortBuild reference adapter. This build does not label any Heartbeat Loyalty fixture as live until a new policy, state, activity, and reward-gate evidence set is published.</p><p class="trust-note">DEMO FIXTURE — NOT LIVE for Heartbeat Loyalty.</p>`) }${renderReturnRail(scenario)}`;
+  }
+  return `${panel("judge-demo", "Heartbeat Loyalty fixture — not live", `<p class="intro-copy">The local test suite verifies fixed heartbeat policy, verifier-signed activity, anti-burst behavior, lazy decay, tiers, and a loyalty-gated SPL reward. This page does not fabricate a live score or transaction.</p>${scenarioControls(scenario)}`)}${renderReturnRail(scenario)}`;
 }
 
 function renderCampaign() {
+  if (LIVE_HEARTBEAT) {
+    const config = live.loyaltyConfig;
+    const detail = config ? `<dl class="proof-list"><dt>Heartbeat campaign</dt><dd>${code(HEARTBEAT_DEMO.campaign)} ${link(explorerAddress(HEARTBEAT_DEMO.campaign), "EXPLORER")}</dd><dt>Policy</dt><dd>${code(HEARTBEAT_DEMO.loyaltyConfig)} ${link(explorerAddress(HEARTBEAT_DEMO.loyaltyConfig), "EXPLORER")}</dd><dt>Authority / verifier</dt><dd>${code(config.authority.toBase58())} / ${code(config.verifier.toBase58())} · verifier epoch ${config.verifierEpoch}</dd><dt>Heartbeat / minimum return</dt><dd>${formatHeartbeat(config.heartbeatSeconds)} / ${formatHeartbeat(config.minimumReturnInterval)}</dd><dt>Score policy</dt><dd>+${config.activeCredit} activity credit · +${config.streakBonus} streak bonus (cap ${config.streakBonusCap}) · −${config.decayPerMissedPeriod} per missed period</dd><dt>Tier thresholds</dt><dd>Bronze ${config.bronzeThreshold} · Silver ${config.silverThreshold} · Gold ${config.goldThreshold} · Platinum ${config.platinumThreshold}</dd><dt>Frozen policy hash</dt><dd>${code(hex(config.configHash))}</dd></dl>` : `<p class="transaction-state">${live.heartbeatConfiguredState === "failed" ? live.heartbeatConfiguredError : "Loading configured Devnet HeartbeatPolicy…"}</p>`;
+    return `${panel("campaign-config", "Fixed project heartbeat policy", `<p class="intro-copy">The policy is a separate immutable PDA. It binds campaign identity, verifier epoch, cadence, score parameters, thresholds, and a deterministic hash without reinterpreting the legacy CampaignConfig account.</p>${detail}<p class="trust-note">This Devnet policy is intentionally shortened for evidence. Production projects choose their own real-world cadence.</p>`)}`;
+  }
   if (LIVE_DEVNET) {
     const campaign = live.campaign;
     const detail = campaign ? `<dl class="proof-list"><dt>Campaign</dt><dd>${code(campaign.address.toBase58())} ${link(explorerAddress(campaign.address.toBase58()), "EXPLORER")}</dd><dt>Status</dt><dd>${campaignStatuses[campaign.status] ?? "Unknown"} · actions ${campaign.paused ? "paused" : "unpaused"}</dd><dt>Verifier / epoch</dt><dd>${code(campaign.verifier.toBase58())} · epoch ${campaign.verifierEpoch} · ${campaign.verifierActive ? "active" : "inactive"}</dd><dt>Reward authority</dt><dd>${code(campaign.rewardAuthority.toBase58())}</dd><dt>Source program / authority</dt><dd>${code(campaign.sourceProgram.toBase58())} / ${code(campaign.sourceAuthority.toBase58())}</dd><dt>Challenge ID</dt><dd>${campaign.challengeId.toString()}</dd><dt>Return gate</dt><dd>${campaign.minElapsedSeconds} seconds and ${campaign.minPeriodGap} period(s) of ${campaign.periodSeconds} seconds.</dd><dt>Frozen config hash</dt><dd>${code(hex(campaign.configHash))}</dd></dl>` : `<p class="transaction-state">${live.configuredState === "failed" ? live.configuredError : "Loading configured Devnet Campaign…"}</p>`;
@@ -162,36 +200,43 @@ function renderLivePanel(kind) {
 }
 
 function renderProgress(scenario) {
-  const content = LIVE_DEVNET ? `<p class="intro-copy">The public Devnet user state is refetched from the configured UserProgress PDA. A connected wallet is additionally checked against its own PDA.</p><div class="detail-grid"><div><span class="metric-label">Configured DEMO progress</span><strong>${stageName()}</strong><p>Native CohortBuild CPI is recorded as Shipped before reward settlement.</p></div><div><span class="metric-label">Completion / Ship</span><strong>${link(DEMO.transactions.nativeCpiShip.explorerUrl, "VIEW CPI TX")}</strong><p>Explorer shows the real Devnet transaction.</p></div></div><dl class="proof-list"><dt>UserProgress</dt><dd>${code(DEMO.userProgress)} ${link(explorerAddress(DEMO.userProgress), "EXPLORER")}</dd><dt>Module finalization</dt><dd>${link(DEMO.transactions.moduleFinalization.explorerUrl, "VIEW TX")}</dd><dt>Completion</dt><dd>Owner, discriminator, PDA, challenge, wallet, and project are enforced by BuilderLoop.</dd><dt>Clock gate</dt><dd>${DEMO.timing.minimumElapsedSeconds} seconds plus ${DEMO.timing.minimumPeriodGap} period.</dd></dl>` : `<p class="intro-copy">The public view stays read-only. The optional local path only marks a success after the program account is refetched and verified.</p>`;
-  return `${panel("progress", "Wallet-bound progress", content) }${renderReturnRail(scenario)}${renderLivePanel("progress")}`;
+  if (LIVE_HEARTBEAT) return `${renderHeartbeatPanel()}${panel("progress", "Reusable wallet loyalty state", `<p class="intro-copy">LoyaltyState is wallet-bound and public. Its stored score is settled only when a verified activity occurs; its current effective score and tier are derived from Solana Clock without a scheduler.</p><p class="trust-note">The public account above belongs to the prepared Devnet demo wallet. A verifier or native source adapter—not the wallet—defines meaningful activity.</p>`)}${renderReturnRail(scenario)}`;
+  const content = LIVE_DEVNET ? `<p class="intro-copy">The current deployed reference account remains a CohortBuild UserProgress. A new public LoyaltyState is not configured in this build.</p>` : `<p class="intro-copy">The public view stays read-only. The optional local path only marks a success after the program account is refetched and verified.</p>`;
+  return `${panel("progress", "Wallet-bound loyalty state", content)}${renderLivePanel("progress")}${renderReturnRail(scenario)}`;
 }
 
 function renderReward(scenario) {
+  if (LIVE_HEARTBEAT) {
+    const gate = live.loyaltyRewardGate;
+    const reward = live.heartbeatReward;
+    const detail = gate && reward ? `<dl class="proof-list"><dt>Reward</dt><dd>${code(HEARTBEAT_DEMO.reward)} ${link(explorerAddress(HEARTBEAT_DEMO.reward), "EXPLORER")}</dd><dt>Reward gate</dt><dd>${code(HEARTBEAT_DEMO.loyaltyRewardGate)} ${link(explorerAddress(HEARTBEAT_DEMO.loyaltyRewardGate), "EXPLORER")}</dd><dt>Required loyalty</dt><dd>score ≥ ${gate.minimumScore} and tier ≥ ${["BRONZE", "SILVER", "GOLD", "PLATINUM"][gate.minimumTier] ?? "UNKNOWN"}</dd><dt>Fixed payout</dt><dd>${reward.amount.toString()} units from a classic SPL test mint</dd><dt>Claim</dt><dd>${code(HEARTBEAT_DEMO.claim)} ${link(explorerAddress(HEARTBEAT_DEMO.claim), "EXPLORER")}</dd><dt>Settlement</dt><dd>${link(HEARTBEAT_DEMO.transactions.loyaltyRewardClaimed.explorerUrl, "VIEW CLAIM TX")}</dd></dl>` : `<p class="transaction-state">${live.heartbeatConfiguredState === "failed" ? live.heartbeatConfiguredError : "Loading loyalty reward gate…"}</p>`;
+    return `${panel("reward", "Loyalty-gated fixed SPL reward", `<p class="intro-copy">This separate claim instruction derives effective loyalty with Solana Clock, verifies the frozen policy hash and threshold, then transfers the fixed vault amount. The claimant never supplies the payout amount.</p>${detail}<p class="trust-note">Reward is one consumer of LoyaltyState. Access, discounts, and allowlists are future consumers, not implemented claims.</p>`)}`;
+  }
   const content = LIVE_DEVNET ? `<p class="intro-copy">Reward amount is stored in the Devnet Reward account; the claimant does not supply it. The verified demo Claim used a signer-owned same-mint recipient account.</p><div class="detail-grid"><div><span class="metric-label">Fixed amount</span><strong>${live.reward ? live.reward.amount.toString() : DEMO.label}</strong><p>Classic SPL test mint only. No token valuation is implied.</p></div><div><span class="metric-label">Claim status</span><strong>${rewardStateName()}</strong><p>${live.reward ? `${live.reward.claimed}/${live.reward.maxClaims} claims` : "Loading Devnet Reward"}</p></div></div><dl class="proof-list"><dt>Reward</dt><dd>${code(DEMO.reward)} ${link(explorerAddress(DEMO.reward), "EXPLORER")}</dd><dt>Mint</dt><dd>${code(DEMO.mint)} ${link(explorerAddress(DEMO.mint), "EXPLORER")}</dd><dt>Claim</dt><dd>${code(DEMO.claim)} ${link(explorerAddress(DEMO.claim), "EXPLORER")}</dd><dt>Settlement transaction</dt><dd>${link(DEMO.transactions.rewardClaimed.explorerUrl, "VIEW CLAIM TX")}</dd><dt>Duplicate protection</dt><dd>One Claim PDA exists per reward and wallet.</dd></dl><p class="trust-note">This completed DEMO CONFIGURATION has one claimed fixed payout. A connected wallet can load and verify its own supported Claim path; it cannot receive a payout without a Shipped UserProgress.</p>` : `<p class="intro-copy">Reward amount is stored in the Reward account; the claimant does not supply it.</p>`;
   return `${panel("reward", "Fixed reward settlement", content) }${renderReturnRail(scenario)}${renderLivePanel("reward")}`;
 }
 
 function renderArchitecture() {
-  const nodes = ["CampaignConfig", "UserProgress", "ModuleReceipt", "Challenge", "BuildSubmission", "Completion", "Reward", "Claim", "SPL Token vault"];
-  return `${panel("architecture", "Native CPI and settlement blueprint", `<p class="intro-copy">These are technical panels, not controls. BuilderLoop validates frozen state, then CohortBuild invokes the native Ship instruction through its source-authority PDA.</p><div class="architecture-grid">${nodes.map((node, index) => `<article class="architecture-node"><p>BL_${String(index + 1).padStart(2, "0")}</p><h3>${node}</h3><span>${architectureDescription(node)}</span></article>`).join("")}</div><div class="cpi-lane"><span>${code(EVIDENCE.cohortBuild)}</span><b>native CPI →</b><span>${code(EVIDENCE.program)}</span><b>→</b><span>classic SPL Token vault</span></div><p class="trust-note">Completion account bytes are serialized before the atomic CPI; static diagram nodes never initiate a transaction.</p>`)}`;
+  const nodes = ["LoyaltyConfig", "ActivityReceipt", "LoyaltyState", "LoyaltyRewardGate", "Reward", "Claim", "SPL Token vault", "CohortBuild adapter", "UserProgress"];
+  return `${panel("architecture", "Heartbeat loyalty architecture", `<p class="intro-copy">Different systems prove the facts. BuilderLoop applies one fixed project heartbeat, activity history, and Solana Clock to derive reusable wallet loyalty.</p><div class="architecture-grid">${nodes.map((node, index) => `<article class="architecture-node"><p>BL_${String(index + 1).padStart(2, "0")}</p><h3>${node}</h3><span>${architectureDescription(node)}</span></article>`).join("")}</div><div class="cpi-lane"><span>verifier Ed25519 or source program CPI</span><b>→</b><span>BuilderLoop LoyaltyState</span><b>→</b><span>reward gate / classic SPL vault</span></div><p class="trust-note">CohortBuild remains the reference native adapter. It proves one kind of source outcome; BuilderLoop decides whether verified activity represents consistent return behavior.</p>`)}`;
 }
 
 function architectureDescription(node) {
   return {
-    CampaignConfig: "Frozen identities, schedule, gaps, and config hash.",
-    UserProgress: "Signer-bound ordered stage and project commitment.",
-    ModuleReceipt: "One canonical event, pending then finalized.",
-    Challenge: "Configured source-side challenge identity.",
-    BuildSubmission: "Source program's submitted project state.",
-    Completion: "Wallet/project/challenge-bound native source output.",
-    Reward: "Fixed amount, mint, config snapshot, window, authority.",
-    Claim: "One PDA per reward and claimant wallet.",
-    "SPL Token vault": "Reward-controlled classic token inventory.",
+    LoyaltyConfig: "Immutable campaign-bound heartbeat, verifier epoch, score parameters, thresholds, and policy hash.",
+    ActivityReceipt: "One verifier-attested activity ID per wallet and policy; replay protection lives in the PDA namespace.",
+    LoyaltyState: "Wallet-bound stored score, last meaningful activity, streak, and counted-activity total.",
+    LoyaltyRewardGate: "Frozen policy snapshot plus minimum effective score and tier for a Reward.",
+    Reward: "Fixed amount, mint, campaign snapshot, window, and authority.",
+    Claim: "One PDA per reward and claimant wallet, shared by legacy and loyalty claim paths.",
+    "SPL Token vault": "Reward-controlled classic-token inventory with fixed transfer amounts.",
+    "CohortBuild adapter": "Reference source program that proves a Completion through native CPI.",
+    UserProgress: "Legacy/reference ordered Module → Return → Ship state, preserved unchanged.",
   }[node];
 }
 
 function renderEvidence() {
-  const content = LIVE_DEVNET ? `<div class="detail-grid"><div><span class="metric-label">Repository</span><strong>Public GitHub</strong><p>${link("https://github.com/renkuror/builderloop", "renkuror/builderloop")}</p></div><div><span class="metric-label">Network evidence</span><strong>LIVE DEVNET</strong><p>Program, account, and finalized transaction links are public.</p></div></div><dl class="proof-list"><dt>BuilderLoop program</dt><dd>${code(PROGRAM_ID.toBase58())} ${link(explorerAddress(PROGRAM_ID.toBase58()), "EXPLORER")}</dd><dt>CohortBuild program</dt><dd>${code(COHORT_BUILD_ID.toBase58())} ${link(explorerAddress(COHORT_BUILD_ID.toBase58()), "EXPLORER")}</dd><dt>Module finalization</dt><dd>${link(DEMO.transactions.moduleFinalization.explorerUrl, "EXPLORER")}</dd><dt>Native CPI Ship</dt><dd>${link(DEMO.transactions.nativeCpiShip.explorerUrl, "EXPLORER")}</dd><dt>Fixed SPL Reward Claim</dt><dd>${link(DEMO.transactions.rewardClaimed.explorerUrl, "EXPLORER")}</dd></dl><p class="trust-note">The test mint and DEMO CONFIGURATION are public Devnet evidence, not sponsor, adoption, or Sybil-resistance claims.</p>` : `<p>Devnet evidence has not been configured.</p>`;
+  const content = LIVE_HEARTBEAT ? `<div class="detail-grid"><div><span class="metric-label">Repository</span><strong>Public GitHub</strong><p>${link("https://github.com/renkuror/builderloop", "renkuror/builderloop")}</p></div><div><span class="metric-label">Network evidence</span><strong>LIVE DEVNET</strong><p>Policy, activity, state, gate, and finalized claim are public.</p></div></div><dl class="proof-list"><dt>BuilderLoop program</dt><dd>${code(PROGRAM_ID.toBase58())} ${link(explorerAddress(PROGRAM_ID.toBase58()), "EXPLORER")}</dd><dt>Heartbeat policy</dt><dd>${link(HEARTBEAT_DEMO.transactions.policyCreated.explorerUrl, "EXPLORER")}</dd><dt>First activity</dt><dd>${link(HEARTBEAT_DEMO.transactions.firstActivity.explorerUrl, "EXPLORER")}</dd><dt>Second return</dt><dd>${link(HEARTBEAT_DEMO.transactions.secondActivity.explorerUrl, "EXPLORER")}</dd><dt>Loyalty-gated SPL claim</dt><dd>${link(HEARTBEAT_DEMO.transactions.loyaltyRewardClaimed.explorerUrl, "EXPLORER")}</dd><dt>Historical CohortBuild CPI adapter</dt><dd>${link(DEMO.transactions.nativeCpiShip.explorerUrl, "EXPLORER")}</dd></dl><p class="trust-note">The short Devnet heartbeat and test mint are evidence only. They do not demonstrate organic retention, sponsor independence, or Sybil resistance.</p>` : LIVE_DEVNET ? `<p class="intro-copy">Historical CohortBuild Devnet evidence is configured, but a Heartbeat Loyalty evidence set is not yet published by this build.</p><p class="trust-note">DEMO FIXTURE — NOT LIVE for Heartbeat Loyalty.</p>` : `<p>Devnet evidence has not been configured.</p>`;
   return `${panel("evidence", "Reproducible evidence", content)}`;
 }
 
@@ -209,7 +254,7 @@ function renderRoute(route, scenario) {
 }
 
 function renderFooter() {
-  return `<footer class="page-footer"><p>BUILDERLOOP / ${LIVE_DEVNET ? "LIVE DEVNET DEMO CONFIGURATION" : "LOCALNET REFERENCE IMPLEMENTATION"}</p><p>${LIVE_DEVNET ? "Public accounts and Explorer links are verified on Devnet. No Mainnet operation is supported." : "Read-only fixture path first. Wallet controls remain optional and explicitly local."}</p></footer>`;
+  return `<footer class="page-footer"><p>BUILDERLOOP / ${LIVE_HEARTBEAT ? "LIVE DEVNET HEARTBEAT LOYALTY" : LIVE_DEVNET ? "DEVNET REFERENCE ADAPTER" : "LOCALNET HEARTBEAT IMPLEMENTATION"}</p><p>${LIVE_DEVNET ? "Public accounts and Explorer links are verified on Devnet. Mainnet is not supported." : "Read-only fixture path first. No loyalty fixture is represented as live."}</p></footer>`;
 }
 
 function writeToast(message) {
@@ -290,6 +335,7 @@ function mount() {
   wireKeySounds(app);
   bindInteractions();
   void refreshConfiguredDevnetState();
+  void refreshConfiguredHeartbeatState();
 }
 
 function hex(bytes) {
@@ -370,6 +416,63 @@ function decodeReward(data, address) {
   };
 }
 
+function decodeLoyaltyConfig(data, address) {
+  if (data.length !== 217 || !discriminators.loyaltyConfig.every((byte, index) => data[index] === byte)) throw new Error("LoyaltyConfig has an invalid discriminator or layout");
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  return {
+    address,
+    campaign: keyAt(data, 8),
+    campaignConfigHash: data.subarray(40, 72),
+    authority: keyAt(data, 72),
+    verifier: keyAt(data, 104),
+    verifierEpoch: view.getUint32(136, true),
+    heartbeatSeconds: i64(view, 140),
+    minimumReturnInterval: i64(view, 148),
+    activeCredit: view.getUint16(156, true),
+    streakBonus: view.getUint16(158, true),
+    streakBonusCap: view.getUint16(160, true),
+    decayPerMissedPeriod: view.getUint16(162, true),
+    bronzeThreshold: view.getUint16(164, true),
+    silverThreshold: view.getUint16(166, true),
+    goldThreshold: view.getUint16(168, true),
+    platinumThreshold: view.getUint16(170, true),
+    policyEpoch: view.getUint32(172, true),
+    activatedAt: i64(view, 176),
+    configHash: data.subarray(184, 216),
+  };
+}
+
+function decodeLoyaltyState(data, address) {
+  if (data.length !== 125 || !discriminators.loyaltyState.every((byte, index) => data[index] === byte)) throw new Error("LoyaltyState has an invalid discriminator or layout");
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  return {
+    address,
+    loyaltyConfig: keyAt(data, 8),
+    campaign: keyAt(data, 40),
+    wallet: keyAt(data, 72),
+    scoreAtLastSettlement: view.getUint16(104, true),
+    lastMeaningfulActivityAt: i64(view, 106),
+    streak: view.getUint16(114, true),
+    totalCountedActivities: view.getUint32(116, true),
+    policyEpoch: view.getUint32(120, true),
+  };
+}
+
+function decodeLoyaltyRewardGate(data, address) {
+  if (data.length !== 144 || !discriminators.loyaltyRewardGate.every((byte, index) => data[index] === byte)) throw new Error("LoyaltyRewardGate has an invalid discriminator or layout");
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  return {
+    address,
+    reward: keyAt(data, 8),
+    loyaltyConfig: keyAt(data, 40),
+    authority: keyAt(data, 72),
+    policyHash: data.subarray(104, 136),
+    policyEpoch: view.getUint32(136, true),
+    minimumScore: view.getUint16(140, true),
+    minimumTier: data[142],
+  };
+}
+
 function writeLive(message) {
   const output = $("#live-output");
   if (output) output.textContent = message;
@@ -416,6 +519,50 @@ async function refreshConfiguredDevnetState() {
   } catch (error) {
     live.configuredState = "failed";
     live.configuredError = friendlyProgramError(error);
+  }
+  mount();
+}
+
+async function refreshConfiguredHeartbeatState() {
+  if (!LIVE_HEARTBEAT || live.heartbeatConfiguredState !== "idle") return;
+  live.heartbeatConfiguredState = "loading";
+  try {
+    live.connection ??= new Connection(PUBLIC_CONFIG.rpcUrl, "finalized");
+    await assertDevnetConnection(live.connection);
+    const campaignKey = new PublicKey(HEARTBEAT_DEMO.campaign);
+    const configKey = new PublicKey(HEARTBEAT_DEMO.loyaltyConfig);
+    const stateKey = new PublicKey(HEARTBEAT_DEMO.loyaltyState);
+    const gateKey = new PublicKey(HEARTBEAT_DEMO.loyaltyRewardGate);
+    const rewardKey = new PublicKey(HEARTBEAT_DEMO.reward);
+    const [campaignAccount, configAccount, stateAccount, gateAccount, rewardAccount] = await Promise.all([
+      live.connection.getAccountInfo(campaignKey, "finalized"),
+      live.connection.getAccountInfo(configKey, "finalized"),
+      live.connection.getAccountInfo(stateKey, "finalized"),
+      live.connection.getAccountInfo(gateKey, "finalized"),
+      live.connection.getAccountInfo(rewardKey, "finalized"),
+    ]);
+    if (![campaignAccount, configAccount, stateAccount, gateAccount, rewardAccount].every(Boolean)) throw new Error("Configured Heartbeat Loyalty evidence account is missing on Devnet.");
+    if (![campaignAccount, configAccount, stateAccount, gateAccount, rewardAccount].every((account) => account.owner.equals(PROGRAM_ID))) throw new Error("Configured Heartbeat Loyalty evidence account has the wrong owner.");
+    const campaign = decodeCampaign(campaignAccount.data, campaignKey);
+    const config = decodeLoyaltyConfig(configAccount.data, configKey);
+    const loyaltyState = decodeLoyaltyState(stateAccount.data, stateKey);
+    const gate = decodeLoyaltyRewardGate(gateAccount.data, gateKey);
+    const reward = decodeReward(rewardAccount.data, rewardKey);
+    const [expectedConfig] = PublicKey.findProgramAddressSync([Buffer.from("loyalty_config"), campaignKey.toBuffer()], PROGRAM_ID);
+    const [expectedState] = PublicKey.findProgramAddressSync([Buffer.from("loyalty_state"), configKey.toBuffer(), new PublicKey(HEARTBEAT_DEMO.user).toBuffer()], PROGRAM_ID);
+    const [expectedGate] = PublicKey.findProgramAddressSync([Buffer.from("loyalty_reward_gate"), rewardKey.toBuffer()], PROGRAM_ID);
+    const [expectedVault] = PublicKey.findProgramAddressSync([Buffer.from("vault"), rewardKey.toBuffer()], PROGRAM_ID);
+    if (!configKey.equals(expectedConfig) || !stateKey.equals(expectedState) || !gateKey.equals(expectedGate) || !reward.vault.equals(expectedVault)) throw new Error("Heartbeat Loyalty evidence does not use canonical BuilderLoop PDAs.");
+    if (!config.campaign.equals(campaignKey) || hex(config.campaignConfigHash) !== hex(campaign.configHash) || !loyaltyState.loyaltyConfig.equals(configKey) || !loyaltyState.campaign.equals(campaignKey) || !gate.loyaltyConfig.equals(configKey) || !gate.reward.equals(rewardKey) || !reward.campaign.equals(campaignKey)) throw new Error("Heartbeat Loyalty evidence accounts do not form the expected PDA graph.");
+    if (gate.policyEpoch !== config.policyEpoch || hex(gate.policyHash) !== hex(config.configHash)) throw new Error("Loyalty reward gate does not snapshot the configured policy.");
+    live.loyaltyConfig = config;
+    live.loyaltyState = loyaltyState;
+    live.loyaltyRewardGate = gate;
+    live.heartbeatReward = reward;
+    live.heartbeatConfiguredState = "loaded";
+  } catch (error) {
+    live.heartbeatConfiguredState = "failed";
+    live.heartbeatConfiguredError = friendlyProgramError(error);
   }
   mount();
 }
@@ -534,4 +681,4 @@ async function claimReward() {
 window.addEventListener("popstate", mount);
 mount();
 
-export { claimReward, decodeCampaign, decodeProgress, decodeReward, hex };
+export { claimReward, decodeCampaign, decodeLoyaltyConfig, decodeLoyaltyRewardGate, decodeLoyaltyState, decodeProgress, decodeReward, hex };

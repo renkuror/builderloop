@@ -16,9 +16,17 @@ pub const MODULE_SEED: &[u8] = b"module";
 pub const REWARD_SEED: &[u8] = b"reward";
 pub const CLAIM_SEED: &[u8] = b"claim";
 pub const VAULT_SEED: &[u8] = b"vault";
+pub const LOYALTY_CONFIG_SEED: &[u8] = b"loyalty_config";
+pub const LOYALTY_STATE_SEED: &[u8] = b"loyalty_state";
+pub const ACTIVITY_SEED: &[u8] = b"activity";
+pub const LOYALTY_REWARD_GATE_SEED: &[u8] = b"loyalty_reward_gate";
 pub const CONFIG_DOMAIN: &[u8] = b"BUILDERLOOP_CONFIG_V1";
 pub const MODULE_DOMAIN: &[u8] = b"BUILDERLOOP_MODULE_V1";
 pub const PROJECT_DOMAIN: &[u8] = b"BUILDERLOOP_PROJECT_V1";
+pub const HEARTBEAT_CONFIG_DOMAIN: &[u8] = b"BUILDERLOOP_HEARTBEAT_CONFIG_V1";
+pub const HEARTBEAT_ACTIVITY_DOMAIN: &[u8] = b"BUILDERLOOP_HEARTBEAT_ACTIVITY_V1";
+pub const MAX_LOYALTY_SCORE: u16 = 1_000;
+pub const MAX_ACTIVITY_VOUCHER_LIFETIME_SECONDS: i64 = 86_400;
 pub const COMPLETION_DISCRIMINATOR: [u8; 8] = [122, 228, 30, 216, 217, 48, 88, 215];
 
 #[program]
@@ -327,6 +335,287 @@ pub mod builderloop {
         Ok(())
     }
 
+    /// Creates the immutable heartbeat policy linked to an already frozen
+    /// campaign. The legacy campaign layout is intentionally untouched.
+    pub fn create_loyalty_config(
+        ctx: Context<CreateLoyaltyConfig>,
+        args: CreateLoyaltyConfigArgs,
+    ) -> Result<()> {
+        let campaign = &ctx.accounts.campaign;
+        require!(
+            matches!(
+                campaign.status,
+                CampaignStatus::Frozen | CampaignStatus::Active
+            ),
+            BuilderLoopError::InvalidCampaignStatus
+        );
+        require!(campaign.verifier_active, BuilderLoopError::VerifierInactive);
+        require!(
+            campaign.config_hash != [0; 32],
+            BuilderLoopError::ConfigHashMismatch
+        );
+        validate_loyalty_config_args(&args)?;
+
+        let config = &mut ctx.accounts.loyalty_config;
+        config.campaign = campaign.key();
+        config.campaign_config_hash = campaign.config_hash;
+        config.authority = ctx.accounts.authority.key();
+        config.verifier = campaign.verifier;
+        config.verifier_epoch = campaign.verifier_epoch;
+        config.heartbeat_seconds = args.heartbeat_seconds;
+        config.minimum_return_interval = args.minimum_return_interval;
+        config.active_credit = args.active_credit;
+        config.streak_bonus = args.streak_bonus;
+        config.streak_bonus_cap = args.streak_bonus_cap;
+        config.decay_per_missed_period = args.decay_per_missed_period;
+        config.bronze_threshold = args.bronze_threshold;
+        config.silver_threshold = args.silver_threshold;
+        config.gold_threshold = args.gold_threshold;
+        config.platinum_threshold = args.platinum_threshold;
+        config.policy_epoch = 1;
+        config.activated_at = Clock::get()?.unix_timestamp;
+        config.config_hash = loyalty_config_hash(config)?;
+        config.bump = ctx.bumps.loyalty_config;
+        Ok(())
+    }
+
+    /// Records one verifier-attested meaningful activity. The ActivityReceipt
+    /// PDA makes an event single-use; the minimum return interval makes
+    /// repeated activity unable to farm score or streaks.
+    pub fn record_verified_activity(
+        ctx: Context<RecordVerifiedActivity>,
+        args: HeartbeatActivityVoucher,
+    ) -> Result<()> {
+        let campaign = &ctx.accounts.campaign;
+        let config = &ctx.accounts.loyalty_config;
+        assert_loyalty_config_current(config, campaign, campaign.key())?;
+        require!(
+            args.policy_epoch == config.policy_epoch,
+            BuilderLoopError::LoyaltyPolicyEpochMismatch
+        );
+        require!(
+            args.verifier_epoch == config.verifier_epoch,
+            BuilderLoopError::VerifierEpochMismatch
+        );
+        require!(args.activity_kind > 0, BuilderLoopError::InvalidActivity);
+        require!(args.activity_id_hash != [0; 32], BuilderLoopError::ZeroHash);
+        let now = Clock::get()?.unix_timestamp;
+        require!(
+            args.issued_at >= config.activated_at,
+            BuilderLoopError::InvalidActivityVoucherWindow
+        );
+        require!(
+            args.issued_at <= now && now <= args.expires_at,
+            BuilderLoopError::VoucherExpired
+        );
+        let voucher_lifetime = args
+            .expires_at
+            .checked_sub(args.issued_at)
+            .ok_or(BuilderLoopError::ArithmeticOverflow)?;
+        require!(
+            voucher_lifetime <= MAX_ACTIVITY_VOUCHER_LIFETIME_SECONDS,
+            BuilderLoopError::InvalidActivityVoucherWindow
+        );
+        let message = heartbeat_activity_message(
+            config.key(),
+            config,
+            campaign.key(),
+            ctx.accounts.wallet.key(),
+            &args,
+        );
+        inspect_ed25519(
+            &ctx.accounts.instructions.to_account_info(),
+            config.verifier,
+            &message,
+        )?;
+
+        let state = &mut ctx.accounts.loyalty_state;
+        let is_first_activity = state.loyalty_config == Pubkey::default();
+        if is_first_activity {
+            state.loyalty_config = config.key();
+            state.campaign = campaign.key();
+            state.wallet = ctx.accounts.wallet.key();
+            state.score_at_last_settlement = 0;
+            state.last_meaningful_activity_at = 0;
+            state.streak = 0;
+            state.total_counted_activities = 0;
+            state.policy_epoch = config.policy_epoch;
+            state.bump = ctx.bumps.loyalty_state;
+        } else {
+            require_keys_eq!(
+                state.loyalty_config,
+                config.key(),
+                BuilderLoopError::LoyaltyStateMismatch
+            );
+            require_keys_eq!(
+                state.campaign,
+                campaign.key(),
+                BuilderLoopError::LoyaltyStateMismatch
+            );
+            require_keys_eq!(
+                state.wallet,
+                ctx.accounts.wallet.key(),
+                BuilderLoopError::WalletMismatch
+            );
+            require!(
+                state.policy_epoch == config.policy_epoch,
+                BuilderLoopError::LoyaltyPolicyEpochMismatch
+            );
+            let elapsed = now
+                .checked_sub(state.last_meaningful_activity_at)
+                .ok_or(BuilderLoopError::ArithmeticOverflow)?;
+            require!(elapsed >= 0, BuilderLoopError::ClockBeforeActivity);
+            require!(
+                elapsed >= config.minimum_return_interval,
+                BuilderLoopError::ActivityTooEarly
+            );
+        }
+
+        let transition = if is_first_activity {
+            first_loyalty_transition(config)?
+        } else {
+            next_loyalty_transition(
+                state.score_at_last_settlement,
+                state.streak,
+                state.last_meaningful_activity_at,
+                now,
+                config,
+            )?
+        };
+        state.score_at_last_settlement = transition.score;
+        state.last_meaningful_activity_at = now;
+        state.streak = transition.streak;
+        state.total_counted_activities = state
+            .total_counted_activities
+            .checked_add(1)
+            .ok_or(BuilderLoopError::ArithmeticOverflow)?;
+
+        let receipt = &mut ctx.accounts.activity_receipt;
+        receipt.loyalty_config = config.key();
+        receipt.campaign = campaign.key();
+        receipt.wallet = ctx.accounts.wallet.key();
+        receipt.activity_id_hash = args.activity_id_hash;
+        receipt.activity_kind = args.activity_kind;
+        receipt.metadata_hash = args.metadata_hash;
+        receipt.verifier_epoch = args.verifier_epoch;
+        receipt.policy_epoch = args.policy_epoch;
+        receipt.issued_at = args.issued_at;
+        receipt.credited_at = now;
+        receipt.score_after = transition.score;
+        receipt.streak_after = transition.streak;
+        receipt.bump = ctx.bumps.activity_receipt;
+        Ok(())
+    }
+
+    /// Binds an existing fixed SPL Reward to an immutable loyalty policy before
+    /// the reward is activated. Existing Reward and Claim layouts are unchanged.
+    pub fn create_loyalty_reward_gate(
+        ctx: Context<CreateLoyaltyRewardGate>,
+        args: CreateLoyaltyRewardGateArgs,
+    ) -> Result<()> {
+        let reward = &ctx.accounts.reward;
+        let config = &ctx.accounts.loyalty_config;
+        require!(
+            reward.status == RewardStatus::Draft,
+            BuilderLoopError::InvalidRewardStatus
+        );
+        assert_loyalty_config_current(config, &ctx.accounts.campaign, ctx.accounts.campaign.key())?;
+        require!(
+            reward.config_hash == ctx.accounts.campaign.config_hash,
+            BuilderLoopError::ConfigHashMismatch
+        );
+        require!(
+            args.minimum_score <= MAX_LOYALTY_SCORE
+                && args.minimum_tier <= LoyaltyTier::Platinum as u8,
+            BuilderLoopError::InvalidLoyaltyGate
+        );
+        require!(
+            args.minimum_score > 0 || args.minimum_tier > LoyaltyTier::Bronze as u8,
+            BuilderLoopError::InvalidLoyaltyGate
+        );
+        let gate = &mut ctx.accounts.loyalty_reward_gate;
+        gate.reward = reward.key();
+        gate.loyalty_config = config.key();
+        gate.authority = ctx.accounts.reward_authority.key();
+        gate.policy_hash = config.config_hash;
+        gate.policy_epoch = config.policy_epoch;
+        gate.minimum_score = args.minimum_score;
+        gate.minimum_tier = args.minimum_tier;
+        gate.bump = ctx.bumps.loyalty_reward_gate;
+        Ok(())
+    }
+
+    /// A separate claim path consumes an effective, Clock-derived loyalty
+    /// state. It shares the existing Claim PDA namespace, so a wallet cannot
+    /// receive both a legacy and a loyalty claim from the same Reward.
+    pub fn claim_loyalty_reward(ctx: Context<ClaimLoyaltyReward>) -> Result<()> {
+        let now = Clock::get()?.unix_timestamp;
+        let reward = &ctx.accounts.reward;
+        let config = &ctx.accounts.loyalty_config;
+        let gate = &ctx.accounts.loyalty_reward_gate;
+        require!(
+            reward.status == RewardStatus::Active,
+            BuilderLoopError::InvalidRewardStatus
+        );
+        require!(
+            now >= reward.starts_at && now <= reward.ends_at,
+            BuilderLoopError::InvalidRewardWindow
+        );
+        require!(
+            reward.config_hash == ctx.accounts.campaign.config_hash
+                && config.campaign_config_hash == ctx.accounts.campaign.config_hash,
+            BuilderLoopError::ConfigHashMismatch
+        );
+        require!(
+            gate.policy_hash == config.config_hash && gate.policy_epoch == config.policy_epoch,
+            BuilderLoopError::LoyaltyPolicyMismatch
+        );
+        require!(
+            ctx.accounts.loyalty_state.policy_epoch == config.policy_epoch,
+            BuilderLoopError::LoyaltyPolicyEpochMismatch
+        );
+        require!(
+            reward.claimed_count < reward.max_claims,
+            BuilderLoopError::RewardExhausted
+        );
+        let view = effective_loyalty_state(&ctx.accounts.loyalty_state, config, now)?;
+        let tier = loyalty_tier_for_score(view.score, config)?;
+        require!(
+            view.score >= gate.minimum_score && loyalty_tier_rank(tier) >= gate.minimum_tier,
+            BuilderLoopError::InsufficientLoyalty
+        );
+
+        let amount = reward.amount_per_claim;
+        let campaign_key = ctx.accounts.campaign.key();
+        let authority_key = reward.reward_authority;
+        let reward_id = reward.reward_id.to_le_bytes();
+        let bump = [reward.bump];
+        let signer: &[&[u8]] = &[
+            REWARD_SEED,
+            campaign_key.as_ref(),
+            authority_key.as_ref(),
+            &reward_id,
+            &bump,
+        ];
+        token_interface::transfer_checked(
+            ctx.accounts.claim_transfer_ctx().with_signer(&[signer]),
+            amount,
+            ctx.accounts.mint.decimals,
+        )?;
+        let reward = &mut ctx.accounts.reward;
+        reward.claimed_count = reward
+            .claimed_count
+            .checked_add(1)
+            .ok_or(BuilderLoopError::ArithmeticOverflow)?;
+        let claim = &mut ctx.accounts.claim;
+        claim.reward = reward.key();
+        claim.user = ctx.accounts.wallet.key();
+        claim.amount = amount;
+        claim.claimed_at = now;
+        claim.bump = ctx.bumps.claim;
+        Ok(())
+    }
+
     pub fn create_reward(ctx: Context<CreateReward>, args: CreateRewardArgs) -> Result<()> {
         let campaign = &ctx.accounts.campaign;
         require!(
@@ -576,6 +865,38 @@ pub struct CreateRewardArgs {
     pub ends_at: i64,
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct CreateLoyaltyConfigArgs {
+    pub heartbeat_seconds: i64,
+    pub minimum_return_interval: i64,
+    pub active_credit: u16,
+    pub streak_bonus: u16,
+    pub streak_bonus_cap: u16,
+    pub decay_per_missed_period: u16,
+    pub bronze_threshold: u16,
+    pub silver_threshold: u16,
+    pub gold_threshold: u16,
+    pub platinum_threshold: u16,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct HeartbeatActivityVoucher {
+    pub verifier_epoch: u32,
+    pub policy_epoch: u32,
+    pub activity_kind: u16,
+    pub activity_id_hash: [u8; 32],
+    pub metadata_hash: [u8; 32],
+    pub issued_at: i64,
+    pub expires_at: i64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct CreateLoyaltyRewardGateArgs {
+    pub minimum_score: u16,
+    /// 0 = Bronze, 1 = Silver, 2 = Gold, 3 = Platinum.
+    pub minimum_tier: u8,
+}
+
 #[derive(Accounts)]
 #[instruction(args: CreateCampaignArgs)]
 pub struct CreateCampaign<'info> {
@@ -638,6 +959,91 @@ pub struct RecordNativeShip<'info> {
     /// CHECK: exact owner, discriminator, layout, PDA, and frozen fields are checked in the handler.
     pub completion: UncheckedAccount<'info>,
     pub source_authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction(args: CreateLoyaltyConfigArgs)]
+pub struct CreateLoyaltyConfig<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(has_one = authority, seeds = [CAMPAIGN_SEED, authority.key().as_ref(), &campaign.campaign_id.to_le_bytes()], bump = campaign.bump)]
+    pub campaign: Account<'info, CampaignConfig>,
+    #[account(init, payer = authority, space = 8 + LoyaltyConfig::INIT_SPACE, seeds = [LOYALTY_CONFIG_SEED, campaign.key().as_ref()], bump)]
+    pub loyalty_config: Account<'info, LoyaltyConfig>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(args: HeartbeatActivityVoucher)]
+pub struct RecordVerifiedActivity<'info> {
+    #[account(mut)]
+    pub wallet: Signer<'info>,
+    pub campaign: Account<'info, CampaignConfig>,
+    #[account(seeds = [LOYALTY_CONFIG_SEED, campaign.key().as_ref()], bump = loyalty_config.bump, has_one = campaign)]
+    pub loyalty_config: Account<'info, LoyaltyConfig>,
+    #[account(init_if_needed, payer = wallet, space = 8 + LoyaltyState::INIT_SPACE, seeds = [LOYALTY_STATE_SEED, loyalty_config.key().as_ref(), wallet.key().as_ref()], bump)]
+    pub loyalty_state: Account<'info, LoyaltyState>,
+    #[account(init, payer = wallet, space = 8 + ActivityReceipt::INIT_SPACE, seeds = [ACTIVITY_SEED, loyalty_config.key().as_ref(), wallet.key().as_ref(), &args.activity_id_hash], bump)]
+    pub activity_receipt: Account<'info, ActivityReceipt>,
+    /// CHECK: address pins the instructions sysvar; contents are parsed strictly.
+    #[account(address = instructions::ID)]
+    pub instructions: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(args: CreateLoyaltyRewardGateArgs)]
+pub struct CreateLoyaltyRewardGate<'info> {
+    #[account(mut, address = reward.reward_authority @ BuilderLoopError::WrongRewardAuthority)]
+    pub reward_authority: Signer<'info>,
+    pub campaign: Account<'info, CampaignConfig>,
+    #[account(has_one = campaign, has_one = mint, has_one = vault)]
+    pub reward: Account<'info, Reward>,
+    #[account(seeds = [LOYALTY_CONFIG_SEED, campaign.key().as_ref()], bump = loyalty_config.bump, has_one = campaign)]
+    pub loyalty_config: Account<'info, LoyaltyConfig>,
+    #[account(init, payer = reward_authority, space = 8 + LoyaltyRewardGate::INIT_SPACE, seeds = [LOYALTY_REWARD_GATE_SEED, reward.key().as_ref()], bump)]
+    pub loyalty_reward_gate: Account<'info, LoyaltyRewardGate>,
+    pub mint: InterfaceAccount<'info, Mint>,
+    pub vault: InterfaceAccount<'info, TokenAccount>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ClaimLoyaltyReward<'info> {
+    #[account(mut)]
+    pub wallet: Signer<'info>,
+    pub campaign: Account<'info, CampaignConfig>,
+    #[account(seeds = [LOYALTY_CONFIG_SEED, campaign.key().as_ref()], bump = loyalty_config.bump, has_one = campaign)]
+    pub loyalty_config: Account<'info, LoyaltyConfig>,
+    #[account(seeds = [LOYALTY_STATE_SEED, loyalty_config.key().as_ref(), wallet.key().as_ref()], bump = loyalty_state.bump, has_one = loyalty_config, constraint = loyalty_state.wallet == wallet.key() @ BuilderLoopError::WalletMismatch, constraint = loyalty_state.campaign == campaign.key() @ BuilderLoopError::LoyaltyStateMismatch)]
+    pub loyalty_state: Account<'info, LoyaltyState>,
+    #[account(mut, has_one = campaign, has_one = mint, has_one = vault)]
+    pub reward: Account<'info, Reward>,
+    #[account(seeds = [LOYALTY_REWARD_GATE_SEED, reward.key().as_ref()], bump = loyalty_reward_gate.bump, has_one = reward, has_one = loyalty_config)]
+    pub loyalty_reward_gate: Account<'info, LoyaltyRewardGate>,
+    pub mint: InterfaceAccount<'info, Mint>,
+    #[account(mut, seeds = [VAULT_SEED, reward.key().as_ref()], bump = reward.vault_bump)]
+    pub vault: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut, token::mint = mint, token::authority = wallet)]
+    pub recipient: InterfaceAccount<'info, TokenAccount>,
+    #[account(init, payer = wallet, space = 8 + Claim::INIT_SPACE, seeds = [CLAIM_SEED, reward.key().as_ref(), wallet.key().as_ref()], bump)]
+    pub claim: Account<'info, Claim>,
+    #[account(address = anchor_spl::token::ID)]
+    pub token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
+}
+impl<'info> ClaimLoyaltyReward<'info> {
+    fn claim_transfer_ctx(&self) -> CpiContext<'_, '_, '_, 'info, TransferChecked<'info>> {
+        CpiContext::new(
+            self.token_program.to_account_info(),
+            TransferChecked {
+                from: self.vault.to_account_info(),
+                mint: self.mint.to_account_info(),
+                to: self.recipient.to_account_info(),
+                authority: self.reward.to_account_info(),
+            },
+        )
+    }
 }
 
 #[derive(Accounts)]
@@ -864,6 +1270,72 @@ pub struct Claim {
     pub claimed_at: i64,
     pub bump: u8,
 }
+#[account]
+#[derive(InitSpace)]
+pub struct LoyaltyConfig {
+    pub campaign: Pubkey,
+    pub campaign_config_hash: [u8; 32],
+    pub authority: Pubkey,
+    pub verifier: Pubkey,
+    pub verifier_epoch: u32,
+    pub heartbeat_seconds: i64,
+    pub minimum_return_interval: i64,
+    pub active_credit: u16,
+    pub streak_bonus: u16,
+    pub streak_bonus_cap: u16,
+    pub decay_per_missed_period: u16,
+    pub bronze_threshold: u16,
+    pub silver_threshold: u16,
+    pub gold_threshold: u16,
+    pub platinum_threshold: u16,
+    pub policy_epoch: u32,
+    pub activated_at: i64,
+    pub config_hash: [u8; 32],
+    pub bump: u8,
+}
+#[account]
+#[derive(InitSpace)]
+pub struct LoyaltyState {
+    pub loyalty_config: Pubkey,
+    pub campaign: Pubkey,
+    pub wallet: Pubkey,
+    pub score_at_last_settlement: u16,
+    pub last_meaningful_activity_at: i64,
+    pub streak: u16,
+    pub total_counted_activities: u32,
+    pub policy_epoch: u32,
+    pub bump: u8,
+}
+#[account]
+#[derive(InitSpace)]
+pub struct ActivityReceipt {
+    pub loyalty_config: Pubkey,
+    pub campaign: Pubkey,
+    pub wallet: Pubkey,
+    pub activity_id_hash: [u8; 32],
+    pub activity_kind: u16,
+    pub metadata_hash: [u8; 32],
+    pub verifier_epoch: u32,
+    pub policy_epoch: u32,
+    pub issued_at: i64,
+    pub credited_at: i64,
+    pub score_after: u16,
+    pub streak_after: u16,
+    pub bump: u8,
+}
+#[account]
+#[derive(InitSpace)]
+pub struct LoyaltyRewardGate {
+    pub reward: Pubkey,
+    pub loyalty_config: Pubkey,
+    pub authority: Pubkey,
+    pub policy_hash: [u8; 32],
+    pub policy_epoch: u32,
+    pub minimum_score: u16,
+    /// 0 = Bronze, 1 = Silver, 2 = Gold, 3 = Platinum.
+    pub minimum_tier: u8,
+    pub bump: u8,
+}
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace)]
 pub enum CampaignStatus {
@@ -893,6 +1365,27 @@ pub enum RewardStatus {
     Paused,
     Ended,
     Closed,
+}
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace)]
+pub enum LoyaltyTier {
+    Bronze,
+    Silver,
+    Gold,
+    Platinum,
+}
+
+#[derive(Clone, Copy)]
+struct LoyaltyView {
+    score: u16,
+    missed_periods: u64,
+}
+
+#[derive(Clone, Copy)]
+struct LoyaltyTransition {
+    score: u16,
+    streak: u16,
+    #[allow(dead_code)]
+    missed_periods: u64,
 }
 
 #[derive(AnchorDeserialize)]
@@ -1030,6 +1523,224 @@ fn campaign_hash(c: &CampaignConfig) -> Result<[u8; 32]> {
     Ok(hash(&b).to_bytes())
 }
 
+fn validate_loyalty_config_args(a: &CreateLoyaltyConfigArgs) -> Result<()> {
+    require!(
+        a.heartbeat_seconds > 0
+            && a.minimum_return_interval > 0
+            && a.minimum_return_interval <= a.heartbeat_seconds,
+        BuilderLoopError::InvalidLoyaltyPolicy
+    );
+    require!(
+        a.active_credit > 0 && a.streak_bonus_cap > 0 && a.decay_per_missed_period > 0,
+        BuilderLoopError::InvalidLoyaltyScoreParameters
+    );
+    let maximum_credit = u32::from(a.active_credit)
+        .checked_add(
+            u32::from(a.streak_bonus)
+                .checked_mul(u32::from(a.streak_bonus_cap))
+                .ok_or(BuilderLoopError::ArithmeticOverflow)?,
+        )
+        .ok_or(BuilderLoopError::ArithmeticOverflow)?;
+    require!(
+        maximum_credit <= u32::from(MAX_LOYALTY_SCORE),
+        BuilderLoopError::InvalidLoyaltyScoreParameters
+    );
+    require!(
+        a.bronze_threshold == 0
+            && a.silver_threshold > a.bronze_threshold
+            && a.gold_threshold > a.silver_threshold
+            && a.platinum_threshold > a.gold_threshold
+            && a.platinum_threshold <= MAX_LOYALTY_SCORE,
+        BuilderLoopError::InvalidLoyaltyTierThresholds
+    );
+    Ok(())
+}
+
+fn assert_loyalty_config_current(
+    config: &LoyaltyConfig,
+    campaign: &CampaignConfig,
+    campaign_key: Pubkey,
+) -> Result<()> {
+    require_keys_eq!(
+        config.campaign,
+        campaign_key,
+        BuilderLoopError::LoyaltyPolicyMismatch
+    );
+    require!(
+        config.campaign_config_hash == campaign.config_hash,
+        BuilderLoopError::ConfigHashMismatch
+    );
+    require!(
+        config.authority == campaign.authority
+            && config.verifier == campaign.verifier
+            && config.verifier_epoch == campaign.verifier_epoch
+            && campaign.verifier_active,
+        BuilderLoopError::LoyaltyPolicyMismatch
+    );
+    require!(
+        config.policy_epoch == 1 && config.config_hash == loyalty_config_hash(config)?,
+        BuilderLoopError::LoyaltyPolicyMismatch
+    );
+    Ok(())
+}
+
+fn loyalty_config_hash(config: &LoyaltyConfig) -> Result<[u8; 32]> {
+    let mut b = Vec::with_capacity(HEARTBEAT_CONFIG_DOMAIN.len() + 32 * 5 + 4 + 8 * 3 + 2 * 8 + 4);
+    b.extend_from_slice(HEARTBEAT_CONFIG_DOMAIN);
+    b.extend_from_slice(crate::ID.as_ref());
+    b.extend_from_slice(config.campaign.as_ref());
+    b.extend_from_slice(&config.campaign_config_hash);
+    b.extend_from_slice(config.authority.as_ref());
+    b.extend_from_slice(config.verifier.as_ref());
+    b.extend_from_slice(&config.verifier_epoch.to_le_bytes());
+    b.extend_from_slice(&config.heartbeat_seconds.to_le_bytes());
+    b.extend_from_slice(&config.minimum_return_interval.to_le_bytes());
+    b.extend_from_slice(&config.active_credit.to_le_bytes());
+    b.extend_from_slice(&config.streak_bonus.to_le_bytes());
+    b.extend_from_slice(&config.streak_bonus_cap.to_le_bytes());
+    b.extend_from_slice(&config.decay_per_missed_period.to_le_bytes());
+    b.extend_from_slice(&config.bronze_threshold.to_le_bytes());
+    b.extend_from_slice(&config.silver_threshold.to_le_bytes());
+    b.extend_from_slice(&config.gold_threshold.to_le_bytes());
+    b.extend_from_slice(&config.platinum_threshold.to_le_bytes());
+    b.extend_from_slice(&config.policy_epoch.to_le_bytes());
+    b.extend_from_slice(&config.activated_at.to_le_bytes());
+    Ok(hash(&b).to_bytes())
+}
+
+fn heartbeat_activity_message(
+    loyalty_config: Pubkey,
+    config: &LoyaltyConfig,
+    campaign: Pubkey,
+    wallet: Pubkey,
+    voucher: &HeartbeatActivityVoucher,
+) -> Vec<u8> {
+    let mut b = Vec::with_capacity(HEARTBEAT_ACTIVITY_DOMAIN.len() + 32 * 7 + 4 * 2 + 2 + 8 * 2);
+    b.extend_from_slice(HEARTBEAT_ACTIVITY_DOMAIN);
+    b.extend_from_slice(crate::ID.as_ref());
+    b.extend_from_slice(loyalty_config.as_ref());
+    b.extend_from_slice(campaign.as_ref());
+    b.extend_from_slice(wallet.as_ref());
+    b.extend_from_slice(config.verifier.as_ref());
+    b.extend_from_slice(&voucher.verifier_epoch.to_le_bytes());
+    b.extend_from_slice(&voucher.policy_epoch.to_le_bytes());
+    b.extend_from_slice(&voucher.activity_kind.to_le_bytes());
+    b.extend_from_slice(&voucher.activity_id_hash);
+    b.extend_from_slice(&voucher.metadata_hash);
+    b.extend_from_slice(&voucher.issued_at.to_le_bytes());
+    b.extend_from_slice(&voucher.expires_at.to_le_bytes());
+    b
+}
+
+fn effective_loyalty_state(
+    state: &LoyaltyState,
+    config: &LoyaltyConfig,
+    now: i64,
+) -> Result<LoyaltyView> {
+    require!(
+        state.score_at_last_settlement <= MAX_LOYALTY_SCORE,
+        BuilderLoopError::InvalidLoyaltyScoreParameters
+    );
+    let elapsed = now
+        .checked_sub(state.last_meaningful_activity_at)
+        .ok_or(BuilderLoopError::ArithmeticOverflow)?;
+    require!(elapsed >= 0, BuilderLoopError::ClockBeforeActivity);
+    let elapsed_periods = u64::try_from(elapsed / config.heartbeat_seconds)
+        .map_err(|_| error!(BuilderLoopError::ArithmeticOverflow))?;
+    let missed_periods = elapsed_periods.saturating_sub(1);
+    let decay = missed_periods.saturating_mul(u64::from(config.decay_per_missed_period));
+    let score = u64::from(state.score_at_last_settlement).saturating_sub(decay);
+    let score = u16::try_from(score).map_err(|_| error!(BuilderLoopError::ArithmeticOverflow))?;
+    Ok(LoyaltyView {
+        score,
+        missed_periods,
+    })
+}
+
+fn activity_credit(streak: u16, config: &LoyaltyConfig) -> Result<u16> {
+    let capped = u32::from(streak.min(config.streak_bonus_cap));
+    let bonus = u32::from(config.streak_bonus)
+        .checked_mul(capped)
+        .ok_or(BuilderLoopError::ArithmeticOverflow)?;
+    let credit = u32::from(config.active_credit)
+        .checked_add(bonus)
+        .ok_or(BuilderLoopError::ArithmeticOverflow)?;
+    require!(
+        credit <= u32::from(MAX_LOYALTY_SCORE),
+        BuilderLoopError::InvalidLoyaltyScoreParameters
+    );
+    u16::try_from(credit).map_err(|_| error!(BuilderLoopError::ArithmeticOverflow))
+}
+
+fn first_loyalty_transition(config: &LoyaltyConfig) -> Result<LoyaltyTransition> {
+    let streak = 1;
+    Ok(LoyaltyTransition {
+        score: activity_credit(streak, config)?,
+        streak,
+        missed_periods: 0,
+    })
+}
+
+fn next_loyalty_transition(
+    score_at_last_settlement: u16,
+    previous_streak: u16,
+    last_meaningful_activity_at: i64,
+    now: i64,
+    config: &LoyaltyConfig,
+) -> Result<LoyaltyTransition> {
+    let state = LoyaltyState {
+        loyalty_config: Pubkey::default(),
+        campaign: Pubkey::default(),
+        wallet: Pubkey::default(),
+        score_at_last_settlement,
+        last_meaningful_activity_at,
+        streak: previous_streak,
+        total_counted_activities: 0,
+        policy_epoch: config.policy_epoch,
+        bump: 0,
+    };
+    let view = effective_loyalty_state(&state, config, now)?;
+    let streak = if view.missed_periods == 0 {
+        previous_streak.saturating_add(1)
+    } else {
+        1
+    };
+    let score = u32::from(view.score)
+        .checked_add(u32::from(activity_credit(streak, config)?))
+        .ok_or(BuilderLoopError::ArithmeticOverflow)?
+        .min(u32::from(MAX_LOYALTY_SCORE));
+    Ok(LoyaltyTransition {
+        score: u16::try_from(score).map_err(|_| error!(BuilderLoopError::ArithmeticOverflow))?,
+        streak,
+        missed_periods: view.missed_periods,
+    })
+}
+
+fn loyalty_tier_for_score(score: u16, config: &LoyaltyConfig) -> Result<LoyaltyTier> {
+    require!(
+        score <= MAX_LOYALTY_SCORE,
+        BuilderLoopError::InvalidLoyaltyScoreParameters
+    );
+    Ok(if score >= config.platinum_threshold {
+        LoyaltyTier::Platinum
+    } else if score >= config.gold_threshold {
+        LoyaltyTier::Gold
+    } else if score >= config.silver_threshold {
+        LoyaltyTier::Silver
+    } else {
+        LoyaltyTier::Bronze
+    })
+}
+
+fn loyalty_tier_rank(tier: LoyaltyTier) -> u8 {
+    match tier {
+        LoyaltyTier::Bronze => 0,
+        LoyaltyTier::Silver => 1,
+        LoyaltyTier::Gold => 2,
+        LoyaltyTier::Platinum => 3,
+    }
+}
+
 fn inspect_ed25519(sysvar: &AccountInfo<'_>, verifier: Pubkey, expected: &[u8]) -> Result<()> {
     let current = instructions::load_current_index_checked(sysvar)
         .map_err(|_| error!(BuilderLoopError::MalformedEd25519Instruction))?;
@@ -1157,4 +1868,28 @@ pub enum BuilderLoopError {
     WithdrawalTooEarly,
     #[msg("vault not empty")]
     VaultNotEmpty,
+    #[msg("invalid heartbeat loyalty policy")]
+    InvalidLoyaltyPolicy,
+    #[msg("invalid heartbeat loyalty score parameters")]
+    InvalidLoyaltyScoreParameters,
+    #[msg("invalid heartbeat loyalty tier thresholds")]
+    InvalidLoyaltyTierThresholds,
+    #[msg("activity occurred before the minimum return interval")]
+    ActivityTooEarly,
+    #[msg("activity voucher has an invalid validity window")]
+    InvalidActivityVoucherWindow,
+    #[msg("invalid verified activity")]
+    InvalidActivity,
+    #[msg("loyalty policy mismatch")]
+    LoyaltyPolicyMismatch,
+    #[msg("loyalty policy epoch mismatch")]
+    LoyaltyPolicyEpochMismatch,
+    #[msg("loyalty state does not match the configured policy")]
+    LoyaltyStateMismatch,
+    #[msg("Solana Clock precedes the recorded meaningful activity")]
+    ClockBeforeActivity,
+    #[msg("invalid loyalty reward gate")]
+    InvalidLoyaltyGate,
+    #[msg("effective loyalty does not satisfy this reward gate")]
+    InsufficientLoyalty,
 }

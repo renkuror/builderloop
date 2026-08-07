@@ -1,6 +1,9 @@
 use builderloop_protocol_core::{
-    attestation_bytes, attestation_hash, config_bytes, config_hash, period_for, project_id,
-    required_reward_inventory, validate_campaign_config, CampaignConfig, ModuleAttestation,
+    apply_loyalty_activity, attestation_bytes, attestation_hash, config_bytes, config_hash,
+    effective_loyalty, first_loyalty_activity, heartbeat_activity_bytes, heartbeat_activity_hash,
+    heartbeat_config_bytes, heartbeat_config_hash, period_for, project_id,
+    required_reward_inventory, tier_for_score, validate_campaign_config, validate_heartbeat_policy,
+    CampaignConfig, HeartbeatActivity, HeartbeatPolicy, LoyaltyTier, ModuleAttestation,
     ProtocolError, Pubkey,
 };
 
@@ -31,6 +34,29 @@ fn fixture() -> CampaignConfig {
         source_authority: KEY_E,
         challenge_id: 42,
         actions_paused: false,
+    }
+}
+
+fn heartbeat_fixture() -> HeartbeatPolicy {
+    HeartbeatPolicy {
+        builderloop_program_id: KEY_D,
+        campaign: KEY_A,
+        campaign_config_hash: [6; 32],
+        authority: KEY_A,
+        verifier: KEY_B,
+        verifier_epoch: 3,
+        heartbeat_seconds: 20,
+        minimum_return_interval: 15,
+        active_credit: 300,
+        streak_bonus: 50,
+        streak_bonus_cap: 4,
+        decay_per_missed_period: 200,
+        bronze_threshold: 0,
+        silver_threshold: 300,
+        gold_threshold: 600,
+        platinum_threshold: 850,
+        policy_epoch: 1,
+        activated_at: 1_000,
     }
 }
 
@@ -93,6 +119,105 @@ fn rejects_invalid_schedule_boundaries_and_reward_overflow() {
     assert_eq!(
         required_reward_inventory(u64::MAX, 2),
         Err(ProtocolError::ArithmeticOverflow)
+    );
+}
+
+#[test]
+fn heartbeat_policy_and_activity_layouts_match_the_javascript_vectors() {
+    let policy = heartbeat_fixture();
+    assert_eq!(
+        heartbeat_config_bytes(&policy).expect("valid policy").len(),
+        239
+    );
+    assert_eq!(
+        heartbeat_config_hash(&policy).expect("valid policy"),
+        hash("c9d7b8f023f99c7c3351f0f310f4c5e75631269e392703466474e7a6543d8c1f")
+    );
+    let activity = HeartbeatActivity {
+        builderloop_program_id: KEY_D,
+        loyalty_config: KEY_C,
+        campaign: KEY_A,
+        wallet: KEY_E,
+        verifier: KEY_B,
+        verifier_epoch: 3,
+        policy_epoch: 1,
+        activity_kind: 1,
+        activity_id_hash: [7; 32],
+        metadata_hash: [8; 32],
+        issued_at: 1_000,
+        expires_at: 1_060,
+    };
+    assert_eq!(
+        heartbeat_activity_bytes(&activity)
+            .expect("valid activity")
+            .len(),
+        283
+    );
+    assert_eq!(
+        heartbeat_activity_hash(&activity).expect("valid activity"),
+        hash("a0c40318600fbf3866fb6bc856418d188612f72b8bd95befbda5513205acdadc")
+    );
+}
+
+#[test]
+fn heartbeat_loyalty_transitions_are_constant_time_and_bounded() {
+    let policy = heartbeat_fixture();
+    let first = first_loyalty_activity(&policy).expect("first activity");
+    assert_eq!(first.score, 350);
+    assert_eq!(first.streak, 1);
+    assert_eq!(
+        apply_loyalty_activity(first.score, first.streak, 1_000, 1_010, &policy),
+        Err(ProtocolError::ActivityTooEarly)
+    );
+    let second = apply_loyalty_activity(first.score, first.streak, 1_000, 1_015, &policy)
+        .expect("valid return");
+    assert_eq!((second.score, second.streak), (750, 2));
+    let view =
+        effective_loyalty(second.score, second.streak, 1_015, 1_055, &policy).expect("lazy decay");
+    assert_eq!((view.elapsed_periods, view.missed_periods), (2, 1));
+    assert_eq!((view.effective_score, view.effective_streak), (550, 0));
+    assert_eq!(view.next_decay_at, 1_055);
+    assert_eq!(
+        tier_for_score(view.effective_score, &policy),
+        Ok(LoyaltyTier::Silver)
+    );
+    let capped = apply_loyalty_activity(0, u16::MAX, 1_000, 1_015, &policy)
+        .expect("capped historical streak");
+    assert_eq!((capped.score, capped.streak), (500, u16::MAX));
+    let exhausted = effective_loyalty(1, 99, 1_000, i64::MAX, &policy).expect("O(1) saturation");
+    assert_eq!(exhausted.effective_score, 0);
+}
+
+#[test]
+fn heartbeat_policy_rejects_unsafe_timing_thresholds_and_credit() {
+    let policy = heartbeat_fixture();
+    assert_eq!(
+        validate_heartbeat_policy(&HeartbeatPolicy {
+            heartbeat_seconds: 0,
+            ..policy.clone()
+        }),
+        Err(ProtocolError::InvalidHeartbeatPolicy)
+    );
+    assert_eq!(
+        validate_heartbeat_policy(&HeartbeatPolicy {
+            minimum_return_interval: 21,
+            ..policy.clone()
+        }),
+        Err(ProtocolError::InvalidHeartbeatPolicy)
+    );
+    assert_eq!(
+        validate_heartbeat_policy(&HeartbeatPolicy {
+            gold_threshold: 300,
+            ..policy.clone()
+        }),
+        Err(ProtocolError::InvalidTierThresholds)
+    );
+    assert_eq!(
+        validate_heartbeat_policy(&HeartbeatPolicy {
+            active_credit: 900,
+            ..policy
+        }),
+        Err(ProtocolError::InvalidScoreParameters)
     );
 }
 

@@ -1,66 +1,79 @@
 # BuilderLoop Devnet Runbook
 
-This is the reproducible public Devnet path for the fixed BuilderLoop MVP. Mainnet is forbidden. The checked-in program identities are audited and intentionally reused on Devnet:
+Mainnet is forbidden. This runbook performs only Devnet validation, Devnet program upgrades, and Devnet test-token evidence.
 
-- BuilderLoop: `3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2`
-- CohortBuild: `BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF`
+## Audited identities
 
-## Prerequisites
+- BuilderLoop: [`3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2`](https://explorer.solana.com/address/3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2?cluster=devnet)
+- CohortBuild: [`BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF`](https://explorer.solana.com/address/BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF?cluster=devnet)
 
-Use the dedicated fee payer outside the repository at `~/.config/solana/builderloop-devnet.json`. Never copy its private bytes into logs, environment variables, frontend assets, or Git. The CLI must report `https://api.devnet.solana.com` before deployment or demo work:
+Use the dedicated keypair outside the repository. Never copy its bytes, a seed phrase, verifier key, or reward authority secret into Git, logs, public config, or frontend assets.
 
 ```sh
 solana config set --url devnet --keypair ~/.config/solana/builderloop-devnet.json --commitment confirmed
 solana config get
 solana balance --url devnet
+solana program show 3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2 --url devnet
+solana program show BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF --url devnet
 ```
 
-If the RPC or keypair is not Devnet-only, stop. Do not use `solana config set --url mainnet-beta` for this release.
+Stop if the cluster/RPC/genesis is not Devnet or if the BuilderLoop upgrade authority is unavailable. Do not switch to Mainnet as a workaround.
 
-## Build and deploy
+## Build and upgrade
 
-Audit `declare_id!`, `anchor keys list`, `target/deploy/*-keypair.json` public keys, IDLs, and CPI references before changing identities. This repository has matching public keys, so regeneration is unnecessary. Verify Devnet immediately before each deployment:
+The Heartbeat change adds instructions and new PDAs while preserving existing program IDs and legacy account layouts.
 
 ```sh
 NO_DNA=1 anchor build
+NO_DNA=1 anchor test --skip-build
 solana config get
 NO_DNA=1 anchor deploy --program-name builderloop \
   --provider.cluster devnet \
   --provider.wallet ~/.config/solana/builderloop-devnet.json \
   --program-keypair target/deploy/builderloop-keypair.json
-solana config get
 solana program show 3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2 --url devnet
-solana config get
-NO_DNA=1 anchor deploy --program-name cohort_build \
-  --provider.cluster devnet \
-  --provider.wallet ~/.config/solana/builderloop-devnet.json \
-  --program-keypair target/deploy/cohort_build-keypair.json
-solana config get
-solana program show BwT81huRfLF1QHVHXu9hiGS5iXjFjmdZixE7fEHckWAF --url devnet
 ```
 
-Do not claim a deployment until both `solana program show` calls confirm executable upgradeable programs. Deployment signatures and Explorer links are stored in `deployments/devnet.json`.
+CohortBuild does not need an upgrade for the P0 heartbeat ingress. Its existing deployment remains the reference native completion adapter. Do not deploy it unless a checked source change actually requires it.
 
-## Real demo lifecycle
+## Heartbeat evidence lifecycle
 
-The one-command workflow validates the Devnet genesis hash, loads the external payer, checks both programs, and uses real preflight-simulated transactions:
+The guarded script validates the deployed program accounts, Devnet URL, and Devnet genesis hash before every transaction. It creates fresh public test roles in memory, never writes their secrets, and records only public identifiers/signatures.
 
 ```sh
-NO_DNA=1 pnpm devnet:demo
+NO_DNA=1 pnpm heartbeat:demo
+NO_DNA=1 pnpm heartbeat:verify
 ```
 
-It creates a clearly labeled `DEMO CONFIGURATION` with shortened real Solana Clock gates, then executes Campaign → signed Module attestation → pending receipt → Module finalization → elapsed/period gate → CohortBuild Completion → native CPI Ship → create/fund/activate fixed SPL Reward → Claim. It refetches and validates the final accounts before writing public-only evidence.
+The real Devnet demo creates:
 
-The command updates `deployments/devnet.json`, `evidence/devnet-addresses.json`, and `evidence/transaction-links.json`. It never writes role secret keys. The public frontend consumes the resulting deployment configuration at build time.
+1. a frozen legacy Campaign and immutable `LoyaltyConfig`;
+2. a fixed 20-second heartbeat / 15-second minimum-return test policy;
+3. first verifier-signed meaningful activity and `LoyaltyState`;
+4. a rejected early activity proof (recorded as local/script evidence, not a fabricated failed public transaction);
+5. a second valid return reaching the configured Gold tier;
+6. a real Clock-based lazy-decay observation after two heartbeat periods;
+7. a Draft Reward plus frozen `LoyaltyRewardGate`;
+8. a rejected insufficient-loyalty claim, then a successful loyalty-gated fixed SPL test-token claim and rejected duplicate proof.
 
-Verify evidence:
+The command updates only public data in:
+
+- `deployments/devnet.json`
+- `evidence/devnet-addresses.json`
+- `evidence/transaction-links.json`
+
+`pnpm heartbeat:verify` recomputes the policy hash, validates PDA graphs and raw account layouts, re-derives score/decay, checks public transaction success and Explorer URLs, validates token account bindings, and rejects Mainnet references.
+
+## Historical CohortBuild evidence
+
+The existing flow remains independently verifiable:
 
 ```sh
 NO_DNA=1 pnpm devnet:verify
 ```
 
-This checks the Devnet genesis, program owners/executability, confirmation status and error state of the key transactions, and account owners for the recorded addresses.
+This verifies the existing Module finalization, native CohortBuild CPI → Shipped, and classic fixed SPL claim evidence. It is historical reference-adapter evidence, not Heartbeat Loyalty evidence.
 
-## Public evidence
+## Public frontend configuration
 
-The current release evidence includes Explorer links for BuilderLoop, CohortBuild, Module finalization, native CPI Ship, and fixed SPL Claim. The test mint has no implied value. The configured verifier, source semantics, and reward authority are explicit trust boundaries; no Sybil-resistance, sponsor-independence, organic-retention, or adoption claim is made.
+`pnpm frontend:build` runs `scripts/build-devnet-config.js`. It exposes only public Devnet RPC/program/account/signature values. The frontend displays Heartbeat state as `LIVE DEVNET` only when a complete `heartbeatDemo` record exists and its accounts validate at runtime. Otherwise it explicitly says `DEMO FIXTURE — NOT LIVE` and does not manufacture a score, tier, or claim control.

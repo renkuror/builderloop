@@ -8,6 +8,9 @@ use core::fmt;
 pub const CONFIG_DOMAIN: &[u8] = b"BUILDERLOOP_CONFIG_V1";
 pub const PROJECT_DOMAIN: &[u8] = b"BUILDERLOOP_PROJECT_V1";
 pub const MODULE_DOMAIN: &[u8] = b"BUILDERLOOP_MODULE_V1";
+pub const HEARTBEAT_CONFIG_DOMAIN: &[u8] = b"BUILDERLOOP_HEARTBEAT_CONFIG_V1";
+pub const HEARTBEAT_ACTIVITY_DOMAIN: &[u8] = b"BUILDERLOOP_HEARTBEAT_ACTIVITY_V1";
+pub const MAX_LOYALTY_SCORE: u16 = 1_000;
 pub type Pubkey = [u8; 32];
 pub type Hash = [u8; 32];
 
@@ -18,6 +21,11 @@ pub enum ProtocolError {
     InvalidPeriod,
     InvalidGap,
     InvalidTiming,
+    InvalidHeartbeatPolicy,
+    InvalidTierThresholds,
+    InvalidScoreParameters,
+    TimestampBeforeActivity,
+    ActivityTooEarly,
     ArithmeticOverflow,
     TimestampOutsideCampaign,
 }
@@ -30,6 +38,11 @@ impl fmt::Display for ProtocolError {
             Self::InvalidPeriod => "period is invalid or outside campaign range",
             Self::InvalidGap => "minimum period gap is invalid",
             Self::InvalidTiming => "timing gate is invalid",
+            Self::InvalidHeartbeatPolicy => "heartbeat policy is invalid",
+            Self::InvalidTierThresholds => "loyalty tier thresholds are invalid",
+            Self::InvalidScoreParameters => "loyalty score parameters are invalid",
+            Self::TimestampBeforeActivity => "timestamp precedes the last meaningful activity",
+            Self::ActivityTooEarly => "activity is before the minimum return interval",
             Self::ArithmeticOverflow => "checked arithmetic overflowed",
             Self::TimestampOutsideCampaign => "timestamp is outside campaign window",
         })
@@ -72,6 +85,73 @@ pub struct ModuleAttestation {
     pub project_seed_hash: Hash,
     pub metadata_hash: Hash,
     pub expires_at: i64,
+}
+
+/// Immutable, campaign-bound parameters for heartbeat-normalized loyalty.
+/// The program stores the hash of this fixed-width layout after validation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HeartbeatPolicy {
+    pub builderloop_program_id: Pubkey,
+    pub campaign: Pubkey,
+    pub campaign_config_hash: Hash,
+    pub authority: Pubkey,
+    pub verifier: Pubkey,
+    pub verifier_epoch: u32,
+    pub heartbeat_seconds: i64,
+    pub minimum_return_interval: i64,
+    pub active_credit: u16,
+    pub streak_bonus: u16,
+    pub streak_bonus_cap: u16,
+    pub decay_per_missed_period: u16,
+    pub bronze_threshold: u16,
+    pub silver_threshold: u16,
+    pub gold_threshold: u16,
+    pub platinum_threshold: u16,
+    pub policy_epoch: u32,
+    pub activated_at: i64,
+}
+
+/// Fixed-width, verifier-signed meaningful activity voucher.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HeartbeatActivity {
+    pub builderloop_program_id: Pubkey,
+    pub loyalty_config: Pubkey,
+    pub campaign: Pubkey,
+    pub wallet: Pubkey,
+    pub verifier: Pubkey,
+    pub verifier_epoch: u32,
+    pub policy_epoch: u32,
+    pub activity_kind: u16,
+    pub activity_id_hash: Hash,
+    pub metadata_hash: Hash,
+    pub issued_at: i64,
+    pub expires_at: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum LoyaltyTier {
+    Bronze = 0,
+    Silver = 1,
+    Gold = 2,
+    Platinum = 3,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LoyaltyView {
+    pub effective_score: u16,
+    pub effective_streak: u16,
+    pub elapsed_periods: u64,
+    pub missed_periods: u64,
+    pub next_decay_at: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LoyaltyTransition {
+    pub score: u16,
+    pub streak: u16,
+    pub elapsed_periods: u64,
+    pub missed_periods: u64,
 }
 
 pub fn validate_campaign_config(config: &CampaignConfig) -> Result<(), ProtocolError> {
@@ -174,6 +254,260 @@ pub fn attestation_bytes(payload: &ModuleAttestation) -> Vec<u8> {
 
 pub fn attestation_hash(payload: &ModuleAttestation) -> Hash {
     sha256(&attestation_bytes(payload))
+}
+
+pub fn validate_heartbeat_policy(policy: &HeartbeatPolicy) -> Result<(), ProtocolError> {
+    for key in [
+        policy.builderloop_program_id,
+        policy.campaign,
+        policy.authority,
+        policy.verifier,
+    ] {
+        if key == [0; 32] {
+            return Err(ProtocolError::DefaultKey);
+        }
+    }
+    if policy.heartbeat_seconds <= 0
+        || policy.minimum_return_interval <= 0
+        || policy.minimum_return_interval > policy.heartbeat_seconds
+        || policy.policy_epoch == 0
+    {
+        return Err(ProtocolError::InvalidHeartbeatPolicy);
+    }
+    if policy.active_credit == 0
+        || policy.streak_bonus_cap == 0
+        || policy.decay_per_missed_period == 0
+    {
+        return Err(ProtocolError::InvalidScoreParameters);
+    }
+    let maximum_credit = u32::from(policy.active_credit)
+        .checked_add(
+            u32::from(policy.streak_bonus)
+                .checked_mul(u32::from(policy.streak_bonus_cap))
+                .ok_or(ProtocolError::ArithmeticOverflow)?,
+        )
+        .ok_or(ProtocolError::ArithmeticOverflow)?;
+    if maximum_credit > u32::from(MAX_LOYALTY_SCORE) {
+        return Err(ProtocolError::InvalidScoreParameters);
+    }
+    if policy.bronze_threshold != 0
+        || policy.silver_threshold <= policy.bronze_threshold
+        || policy.gold_threshold <= policy.silver_threshold
+        || policy.platinum_threshold <= policy.gold_threshold
+        || policy.platinum_threshold > MAX_LOYALTY_SCORE
+    {
+        return Err(ProtocolError::InvalidTierThresholds);
+    }
+    Ok(())
+}
+
+/// Serializes every loyalty-eligibility field in frozen order.
+pub fn heartbeat_config_bytes(policy: &HeartbeatPolicy) -> Result<Vec<u8>, ProtocolError> {
+    validate_heartbeat_policy(policy)?;
+    let mut bytes = Vec::with_capacity(32 * 5 + 32 + 4 + 8 * 3 + 2 * 8 + 4);
+    bytes.extend_from_slice(HEARTBEAT_CONFIG_DOMAIN);
+    bytes.extend_from_slice(&policy.builderloop_program_id);
+    bytes.extend_from_slice(&policy.campaign);
+    bytes.extend_from_slice(&policy.campaign_config_hash);
+    bytes.extend_from_slice(&policy.authority);
+    bytes.extend_from_slice(&policy.verifier);
+    bytes.extend_from_slice(&policy.verifier_epoch.to_le_bytes());
+    bytes.extend_from_slice(&policy.heartbeat_seconds.to_le_bytes());
+    bytes.extend_from_slice(&policy.minimum_return_interval.to_le_bytes());
+    bytes.extend_from_slice(&policy.active_credit.to_le_bytes());
+    bytes.extend_from_slice(&policy.streak_bonus.to_le_bytes());
+    bytes.extend_from_slice(&policy.streak_bonus_cap.to_le_bytes());
+    bytes.extend_from_slice(&policy.decay_per_missed_period.to_le_bytes());
+    bytes.extend_from_slice(&policy.bronze_threshold.to_le_bytes());
+    bytes.extend_from_slice(&policy.silver_threshold.to_le_bytes());
+    bytes.extend_from_slice(&policy.gold_threshold.to_le_bytes());
+    bytes.extend_from_slice(&policy.platinum_threshold.to_le_bytes());
+    bytes.extend_from_slice(&policy.policy_epoch.to_le_bytes());
+    bytes.extend_from_slice(&policy.activated_at.to_le_bytes());
+    Ok(bytes)
+}
+
+pub fn heartbeat_config_hash(policy: &HeartbeatPolicy) -> Result<Hash, ProtocolError> {
+    Ok(sha256(&heartbeat_config_bytes(policy)?))
+}
+
+pub fn heartbeat_activity_bytes(activity: &HeartbeatActivity) -> Result<Vec<u8>, ProtocolError> {
+    for key in [
+        activity.builderloop_program_id,
+        activity.loyalty_config,
+        activity.campaign,
+        activity.wallet,
+        activity.verifier,
+    ] {
+        if key == [0; 32] {
+            return Err(ProtocolError::DefaultKey);
+        }
+    }
+    if activity.policy_epoch == 0 || activity.activity_kind == 0 {
+        return Err(ProtocolError::InvalidHeartbeatPolicy);
+    }
+    if activity.issued_at > activity.expires_at {
+        return Err(ProtocolError::InvalidTiming);
+    }
+    let mut bytes =
+        Vec::with_capacity(HEARTBEAT_ACTIVITY_DOMAIN.len() + 32 * 7 + 4 * 2 + 2 + 8 * 2);
+    bytes.extend_from_slice(HEARTBEAT_ACTIVITY_DOMAIN);
+    bytes.extend_from_slice(&activity.builderloop_program_id);
+    bytes.extend_from_slice(&activity.loyalty_config);
+    bytes.extend_from_slice(&activity.campaign);
+    bytes.extend_from_slice(&activity.wallet);
+    bytes.extend_from_slice(&activity.verifier);
+    bytes.extend_from_slice(&activity.verifier_epoch.to_le_bytes());
+    bytes.extend_from_slice(&activity.policy_epoch.to_le_bytes());
+    bytes.extend_from_slice(&activity.activity_kind.to_le_bytes());
+    bytes.extend_from_slice(&activity.activity_id_hash);
+    bytes.extend_from_slice(&activity.metadata_hash);
+    bytes.extend_from_slice(&activity.issued_at.to_le_bytes());
+    bytes.extend_from_slice(&activity.expires_at.to_le_bytes());
+    Ok(bytes)
+}
+
+pub fn heartbeat_activity_hash(activity: &HeartbeatActivity) -> Result<Hash, ProtocolError> {
+    Ok(sha256(&heartbeat_activity_bytes(activity)?))
+}
+
+pub fn elapsed_heartbeat_periods(
+    last_meaningful_activity_at: i64,
+    now: i64,
+    heartbeat_seconds: i64,
+) -> Result<u64, ProtocolError> {
+    if heartbeat_seconds <= 0 {
+        return Err(ProtocolError::InvalidHeartbeatPolicy);
+    }
+    let elapsed = now
+        .checked_sub(last_meaningful_activity_at)
+        .ok_or(ProtocolError::ArithmeticOverflow)?;
+    if elapsed < 0 {
+        return Err(ProtocolError::TimestampBeforeActivity);
+    }
+    u64::try_from(elapsed / heartbeat_seconds).map_err(|_| ProtocolError::ArithmeticOverflow)
+}
+
+pub fn missed_heartbeat_periods(elapsed_periods: u64) -> u64 {
+    elapsed_periods.saturating_sub(1)
+}
+
+pub fn tier_for_score(score: u16, policy: &HeartbeatPolicy) -> Result<LoyaltyTier, ProtocolError> {
+    validate_heartbeat_policy(policy)?;
+    if score > MAX_LOYALTY_SCORE {
+        return Err(ProtocolError::InvalidScoreParameters);
+    }
+    Ok(if score >= policy.platinum_threshold {
+        LoyaltyTier::Platinum
+    } else if score >= policy.gold_threshold {
+        LoyaltyTier::Gold
+    } else if score >= policy.silver_threshold {
+        LoyaltyTier::Silver
+    } else {
+        LoyaltyTier::Bronze
+    })
+}
+
+pub fn effective_loyalty(
+    score_at_last_settlement: u16,
+    streak: u16,
+    last_meaningful_activity_at: i64,
+    now: i64,
+    policy: &HeartbeatPolicy,
+) -> Result<LoyaltyView, ProtocolError> {
+    validate_heartbeat_policy(policy)?;
+    if score_at_last_settlement > MAX_LOYALTY_SCORE {
+        return Err(ProtocolError::InvalidScoreParameters);
+    }
+    let elapsed_periods =
+        elapsed_heartbeat_periods(last_meaningful_activity_at, now, policy.heartbeat_seconds)?;
+    let missed_periods = missed_heartbeat_periods(elapsed_periods);
+    let decay = missed_periods.saturating_mul(u64::from(policy.decay_per_missed_period));
+    let effective_score = u64::from(score_at_last_settlement)
+        .saturating_sub(decay)
+        .min(u64::from(MAX_LOYALTY_SCORE));
+    let effective_score =
+        u16::try_from(effective_score).map_err(|_| ProtocolError::ArithmeticOverflow)?;
+    let next_decay_at = last_meaningful_activity_at
+        .checked_add(
+            policy
+                .heartbeat_seconds
+                .checked_mul(2)
+                .ok_or(ProtocolError::ArithmeticOverflow)?,
+        )
+        .ok_or(ProtocolError::ArithmeticOverflow)?;
+    Ok(LoyaltyView {
+        effective_score,
+        effective_streak: if missed_periods == 0 { streak } else { 0 },
+        elapsed_periods,
+        missed_periods,
+        next_decay_at,
+    })
+}
+
+fn activity_credit(streak: u16, policy: &HeartbeatPolicy) -> Result<u16, ProtocolError> {
+    let capped_streak = u32::from(streak.min(policy.streak_bonus_cap));
+    let bonus = u32::from(policy.streak_bonus)
+        .checked_mul(capped_streak)
+        .ok_or(ProtocolError::ArithmeticOverflow)?;
+    let credit = u32::from(policy.active_credit)
+        .checked_add(bonus)
+        .ok_or(ProtocolError::ArithmeticOverflow)?;
+    u16::try_from(credit).map_err(|_| ProtocolError::ArithmeticOverflow)
+}
+
+pub fn first_loyalty_activity(
+    policy: &HeartbeatPolicy,
+) -> Result<LoyaltyTransition, ProtocolError> {
+    validate_heartbeat_policy(policy)?;
+    let streak = 1;
+    Ok(LoyaltyTransition {
+        score: activity_credit(streak, policy)?,
+        streak,
+        elapsed_periods: 0,
+        missed_periods: 0,
+    })
+}
+
+pub fn apply_loyalty_activity(
+    score_at_last_settlement: u16,
+    streak: u16,
+    last_meaningful_activity_at: i64,
+    now: i64,
+    policy: &HeartbeatPolicy,
+) -> Result<LoyaltyTransition, ProtocolError> {
+    validate_heartbeat_policy(policy)?;
+    let elapsed = now
+        .checked_sub(last_meaningful_activity_at)
+        .ok_or(ProtocolError::ArithmeticOverflow)?;
+    if elapsed < 0 {
+        return Err(ProtocolError::TimestampBeforeActivity);
+    }
+    if elapsed < policy.minimum_return_interval {
+        return Err(ProtocolError::ActivityTooEarly);
+    }
+    let view = effective_loyalty(
+        score_at_last_settlement,
+        streak,
+        last_meaningful_activity_at,
+        now,
+        policy,
+    )?;
+    let next_streak = if view.missed_periods == 0 {
+        streak.saturating_add(1)
+    } else {
+        1
+    };
+    let score = u32::from(view.effective_score)
+        .checked_add(u32::from(activity_credit(next_streak, policy)?))
+        .ok_or(ProtocolError::ArithmeticOverflow)?
+        .min(u32::from(MAX_LOYALTY_SCORE));
+    Ok(LoyaltyTransition {
+        score: u16::try_from(score).map_err(|_| ProtocolError::ArithmeticOverflow)?,
+        streak: next_streak,
+        elapsed_periods: view.elapsed_periods,
+        missed_periods: view.missed_periods,
+    })
 }
 
 pub fn period_for(config: &CampaignConfig, timestamp: i64) -> Result<u8, ProtocolError> {

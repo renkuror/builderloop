@@ -56,3 +56,8 @@
 - Green: `pnpm run ci`, `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, `anchor build`, `anchor test --skip-build`, `pnpm evidence`, `pnpm secrets`, and `pnpm devnet:verify`.
 - Playwright install attempts did not populate the pinned Chromium cache; browser smoke remains explicitly blocked and unclaimed.
 - Committed as `900d149`, pushed `codex/devnet-release`, and opened [PR #4](https://github.com/renkuror/builderloop/pull/4) into `main`; no merge was performed. Vercel remains an owner-authenticated browser action.
+
+## 2026-08-08 — Heartbeat Loyalty release
+
+- Built and deployed the compatibility-safe BuilderLoop upgrade to Devnet, generated real Heartbeat Loyalty policy/activity/reward evidence, and verified it with `pnpm heartbeat:verify`.
+- Green checks: CI, fmt, clippy, Cargo workspace tests, Anchor build/localnet suites, frontend build, secret scan, documentation links, old Devnet verification, and heartbeat Devnet verification.

@@ -49,5 +49,88 @@
         "explorerUrl": "https://explorer.solana.com/tx/4amsThi4sYufPZr2vNVpWYyk4LjoBEznSfC44PapphfqTpwxEUXiQQc7SmxfxJNTnUsgxo1RN1kf42PstZtJTAB4?cluster=devnet"
       }
     }
+  },
+  "heartbeatDemo": {
+    "status": "complete",
+    "label": "DEMO CONFIGURATION — shortened 20-second Devnet heartbeat for verification",
+    "campaign": "4RUY9TDYkW25yLDsQe6X4JDJiWc51jDiAwGAKYTR9WLT",
+    "loyaltyConfig": "7Szb6pAR42dq3yuwuhiEQoKLPWbTDhW2uLkq6mVccGkE",
+    "user": "CrjgeEe8Vb3n4RX7BtgRwtrUfdximUV9gaHZcS8c4RBm",
+    "loyaltyState": "FsPtJM452w4FTxdvCUiGf5xfwG3JfFeAhcH2Lcb9WhgN",
+    "activityReceipts": [
+      "6jE322TFbnULSciMNfQsH4hcMndk47MFZ1VVbPHe37k3",
+      "6WUBtBtKMP2awg8ACfkTLHbrm1rzirzqtJUwNeUYFDqT"
+    ],
+    "reward": "8DRLdGdCbVSpbpi8FTTHbWJuhCiaTpA6DA2H7HPgfwDD",
+    "loyaltyRewardGate": "7seDDL9FaTkpM1gYRGtVYvqoChqFQQzfGYWQy6XuCydw",
+    "rewardVault": "rMjyaJunBm7J4HmcTptqNutFuPFwLn2dSspEmdod84a",
+    "mint": "B1iAkPVXdwxZxyseTofKZx8q7Azzy3DSGCbCKMZe2Mzi",
+    "recipient": "5aU19aWRbPQjqX5H2aEKy2dFarJFJwLHsXh5LianEtXM",
+    "claim": "9ypHDZ1rSZNQ69yNdcAJX2iraBXM4msqWHP8GidJejjn",
+    "timing": {
+      "heartbeatSeconds": 20,
+      "minimumReturnInterval": 15,
+      "shortHeartbeatForDevnetVerification": true
+    },
+    "policy": {
+      "activeCredit": 300,
+      "streakBonus": 50,
+      "streakBonusCap": 4,
+      "decayPerMissedPeriod": 200,
+      "bronzeThreshold": 0,
+      "silverThreshold": 300,
+      "goldThreshold": 600,
+        "platinumThreshold": 850,
+        "policyEpoch": 1,
+        "rewardMinimumScore": 700,
+        "rewardMinimumTier": 2,
+        "scoreAfterSecondActivity": 750,
+      "streakAfterSecondActivity": 2
+    },
+    "lazyDecayObservation": {
+      "observedAt": 1786139583,
+      "elapsedPeriods": 2,
+      "missedPeriods": 1,
+      "effectiveScore": 550
+    },
+    "checks": {
+      "antiBurst": {
+        "label": "too-early repeated activity",
+        "rejected": true,
+        "reason": "Simulation failed. \nMessage: Transaction simulation failed: Error processing Instruction 1: custom program error: 0x179a. \nLogs: \n[\n  \"Program 3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2 invoke [1]\",\n  \"Program log: Instruction: RecordVerifiedActivity\",\n  \"Program 11111111111111111111111111111111 invoke [2]\",\n  \"Program 11111111111111111111111111111111 success\",\n  \"Program log: AnchorError thrown in programs/builderloop/src/lib.rs:468. Error Code: ActivityTooEarly. Error Number: 6042. Error Mes"
+      },
+      "insufficientClaim": {
+        "label": "insufficient loyalty claim",
+        "rejected": true,
+        "reason": "AnchorError thrown in programs/builderloop/src/lib.rs:583. Error Code: InsufficientLoyalty. Error Number: 6050. Error Message: effective loyalty does not satisfy this reward gate."
+      },
+      "duplicateClaim": {
+        "label": "duplicate loyalty claim",
+        "rejected": true,
+        "reason": "Simulation failed. \nMessage: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x0. \nLogs: \n[\n  \"Program 3mK8tTZU3vFRxSobUaTAcft68w3AYUmULQnmzvfPL4Q2 invoke [1]\",\n  \"Program log: Instruction: ClaimLoyaltyReward\",\n  \"Program 11111111111111111111111111111111 invoke [2]\",\n  \"Allocate: account Address { address: 9ypHDZ1rSZNQ69yNdcAJX2iraBXM4msqWHP8GidJejjn, base: None } already in use\",\n  \"Program 11111111111111111111111111111111 failed: custom program error: 0x0\","
+      }
+    },
+    "transactions": {
+      "policyCreated": {
+        "label": "Create immutable HeartbeatPolicy",
+        "signature": "3YEgqS8hUGMee1q33gLyVBGsBX5oSEsACNmyw6RR3siU7qFjVQZLtBfqhuUUpx7U5JXEP4RxUrdY2jc3wyMuk8RZ",
+        "explorerUrl": "https://explorer.solana.com/tx/3YEgqS8hUGMee1q33gLyVBGsBX5oSEsACNmyw6RR3siU7qFjVQZLtBfqhuUUpx7U5JXEP4RxUrdY2jc3wyMuk8RZ?cluster=devnet"
+      },
+      "firstActivity": {
+        "label": "Record first verified meaningful activity",
+        "signature": "gSdpoBB1N69UqCUr6C6oUiiKcHDCnqGoNYwnQzxv92LFjmdTuim8HnafNAoFhzrWPm1fmwWdnWXY1VKQUcLjGY7",
+        "explorerUrl": "https://explorer.solana.com/tx/gSdpoBB1N69UqCUr6C6oUiiKcHDCnqGoNYwnQzxv92LFjmdTuim8HnafNAoFhzrWPm1fmwWdnWXY1VKQUcLjGY7?cluster=devnet"
+      },
+      "secondActivity": {
+        "label": "Record second valid heartbeat return",
+        "signature": "MfazZMryoE2gZUxuzJKvh4v6AbwVTcDmMe2GzoTRNpzp8HF1MznSD9nnHApFnjqboCgbacZFUykDMs8rE29kzVP",
+        "explorerUrl": "https://explorer.solana.com/tx/MfazZMryoE2gZUxuzJKvh4v6AbwVTcDmMe2GzoTRNpzp8HF1MznSD9nnHApFnjqboCgbacZFUykDMs8rE29kzVP?cluster=devnet"
+      },
+      "loyaltyRewardClaimed": {
+        "label": "Claim loyalty-gated fixed SPL Reward",
+        "signature": "K8piABoycNFiZafsshP13wMwa8vWW7hme56PUSrPJbqwqfaV37DFMqHaBUfLj7RFtavTj4EQ4PbZcKnBLpgZE89",
+        "explorerUrl": "https://explorer.solana.com/tx/K8piABoycNFiZafsshP13wMwa8vWW7hme56PUSrPJbqwqfaV37DFMqHaBUfLj7RFtavTj4EQ4PbZcKnBLpgZE89?cluster=devnet"
+      }
+    }
   }
 }
