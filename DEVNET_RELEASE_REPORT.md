@@ -53,7 +53,8 @@ See [docs/DEVNET_RUNBOOK.md](docs/DEVNET_RUNBOOK.md). The one-command demo is `N
 ## Branch, commits, and PR
 
 - Branch: `codex/devnet-release`
-- Release commits and Pull Request URL are recorded here after the final push checkpoint.
+- Release commit: `900d149 chore: publish verified devnet release`
+- Pull Request: [#4](https://github.com/renkuror/builderloop/pull/4) into `main` (not merged)
 
 ## Known limitations and remaining human actions
 

@@ -44,3 +44,4 @@
 - Added Devnet runbook, evidence verifier, public frontend config, LIVE DEVNET account reads, Vercel settings, and release report.
 - Green: `pnpm run ci`, `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, `anchor build`, `anchor test --skip-build`, `pnpm evidence`, `pnpm secrets`, and `pnpm devnet:verify`.
 - Playwright install attempts did not populate the pinned Chromium cache; browser smoke remains explicitly blocked and unclaimed.
+- Committed as `900d149`, pushed `codex/devnet-release`, and opened [PR #4](https://github.com/renkuror/builderloop/pull/4) into `main`; no merge was performed. Vercel remains an owner-authenticated browser action.

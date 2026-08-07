@@ -33,10 +33,11 @@ The pre-existing JavaScript model remains only a parity/reference layer. Complet
 - `pnpm ci` (frozen dependency install)
 - `pnpm frontend:build`
 - `pnpm test`
-- `pnpm playwright test`
 - `sh scripts/verify-frontend.sh`
 - `pnpm evidence`
 - `pnpm secrets`
+- `pnpm devnet:verify`
+- `pnpm frontend:serve` plus local HTTP smoke
 
 ## Devnet release checkpoint (2026-08-07)
 
@@ -45,7 +46,7 @@ The pre-existing JavaScript model remains only a parity/reference layer. Complet
 - BuilderLoop and CohortBuild are deployed and confirmed on Devnet with the fixed IDs. `pnpm devnet:demo` completed a real Campaign → Module → Clock gate → native CPI Ship → fixed SPL Claim lifecycle and wrote public evidence.
 - `pnpm devnet:verify` passes. `pnpm run ci`, `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and `anchor test --skip-build` pass.
 - Playwright smoke is environment-blocked: the pinned Chromium executable is still absent after installer attempts; no browser pass is claimed.
-- Remaining release actions: final docs/state commit, push branch, create PR into `main`, and owner-only Vercel browser deployment.
+- Release checkpoint committed as `900d149`, pushed to `codex/devnet-release`, and opened as [PR #4](https://github.com/renkuror/builderloop/pull/4) into `main` without merging. Remaining human action is the owner-only Vercel browser deployment/review.
 
 ## 2026-08-06 Frontend checkpoint
 
