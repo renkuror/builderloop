@@ -8,6 +8,7 @@
 - Ran `pnpm devnet:verify`, `solana program show` for both IDs, `anchor build`, `anchor test --skip-build`, Rust fmt/clippy/tests, `pnpm run ci`, `pnpm frontend:build`, `pnpm secrets`, and `pnpm evidence`; all passed.
 - Added the production URL/proof inventory to README and public docs, added `scripts/verify-public-release.js`, and recorded the browser-only limitation: Chromium installation and local Playwright bind remained unavailable.
 - Retried `pnpm playwright test` with host-level permission; the runner started all 10 tests but each failed before assertions because `chromium_headless_shell-1187` was absent. No browser PASS is claimed.
+- PR #5 opened as a draft into `main`; `local-mvp` passed. The Vercel Preview check failed externally because the Git author lacks access to the Vercel project; no merge was performed.
 
 ## 2026-08-05
 

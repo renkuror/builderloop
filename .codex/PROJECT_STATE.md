@@ -56,6 +56,7 @@ The pre-existing JavaScript model remains only a parity/reference layer. Complet
 - All seven direct routes returned HTTP 200 with the application shell. The public bundle contains the Mechanical Manga UI, `LIVE DEVNET`, audited program IDs, public proof signatures, and no private material or Mainnet configuration.
 - `pnpm devnet:verify` confirmed Devnet genesis, executable BuilderLoop/CohortBuild programs, successful Module Finalization/native CPI Ship/SPL Claim signatures, and all recorded account owners.
 - Repository-side blocking defects fixed: public URL and complete proof inventory were added to README/public docs; `scripts/verify-public-release.js` and `pnpm public:verify` now make the HTTP/bundle/link audit reproducible.
+- PR #5 `local-mvp` passed. Its Vercel Preview check is externally permission-blocked because Git author `Skizm-tzz` lacks project access; the canonical production alias remains verified.
 
 ## 2026-08-06 Frontend checkpoint
 

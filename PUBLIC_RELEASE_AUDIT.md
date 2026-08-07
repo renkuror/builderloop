@@ -89,6 +89,8 @@ The same public IDs and proof links are exposed in the [README](README.md), [Dev
 | `cargo test --workspace` | PASS: 7 Rust unit/vector tests |
 | `anchor build` | PASS: BuilderLoop and CohortBuild release artifacts |
 | `anchor test --skip-build` | PASS: local-validator Module → native CPI Ship → fixed SPL reward integration suite |
+| PR #5 `local-mvp` check | PASS |
+| PR #5 Vercel Preview check | EXTERNAL BLOCKER: Vercel reports Git author `Skizm-tzz` lacks access to the Vercel project; canonical production was independently verified and no repository fix can change this permission. |
 | Playwright production smoke | BLOCKED before assertions: 10 tests could not launch because the pinned Chromium headless shell is missing; no PASS claimed |
 
 ## Fixes made
@@ -101,6 +103,7 @@ The same public IDs and proof links are exposed in the [README](README.md), [Dev
 ## Remaining limitations
 
 - Browser-level visual, console, mobile viewport, and wallet-extension verification remains pending a host with a working Chromium executable and local web-server bind permission. Public HTTP and Devnet verification are complete.
+- PR preview deployment is permission-blocked by the Vercel team, although the existing canonical production alias is public and verified. A Vercel project owner must grant the Git author access if PR previews are required.
 - This is one fixed Devnet demo campaign with shortened Clock gates and a test SPL mint. The verifier and reference source authority are explicit trust boundaries.
 - No Mainnet deployment, independent sponsor, organic retention, proof of personhood, Sybil-resistance, or off-chain payout utility is claimed.
 
